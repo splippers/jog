@@ -1,0 +1,12 @@
+# Install to /etc/lightdm/lightdm.conf.d/50-jog-autologin.conf
+# Replace USERNAME with the kiosk account (e.g. jogadmin).
+#
+# Uses ubuntu-xorg (X11) — not the default ubuntu (Wayland) session — so Chromium and
+# Intel graphics on laptops (e.g. Dell Latitude 3410) avoid Wayland/compositor edge cases.
+
+[Seat:*]
+autologin-user=USERNAME
+autologin-user-timeout=0
+# X11 session (required for reliable Chromium + kiosk on Ubuntu + Intel iGPU)
+user-session=ubuntu-xorg
+autologin-session=ubuntu-xorg

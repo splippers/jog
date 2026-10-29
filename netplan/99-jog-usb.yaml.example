@@ -1,0 +1,25 @@
+# Copy to /etc/netplan/99-jog-usb.yaml and apply with: sudo netplan apply
+#
+# Goals:
+# - USB3 NIC: static IP on isolated imaging subnet only (no default route here).
+# - Onboard Ethernet: unplugged or disabled on imaging days (recommended).
+# - WiFi: default route + DNS for apt (lower metric than any wired corporate link).
+
+network:
+  version: 2
+  ethernets:
+    # REPLACE with your USB adapter id (see: ip -br link)
+    enx00e04c680001:
+      addresses:
+        - 10.99.0.1/24
+      # Do NOT add a default route on this interface.
+      dhcp4: false
+      optional: true
+
+  wifis:
+    # REPLACE with your WiFi interface
+    wlp2s0:
+      dhcp4: true
+      dhcp4-overrides:
+        route-metric: 50
+      optional: true

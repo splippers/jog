@@ -1,0 +1,9 @@
+[Unit]
+Description=JOG — refresh local status HTML for kiosk
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=JOG_STATUS_DIR=/var/lib/jog/status
+ExecStart=/usr/local/bin/jog-refresh-status.sh

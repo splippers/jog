@@ -1,0 +1,14 @@
+# Only needed if the imaging NIC is an onboard interface (not a dedicated USB
+# adapter) that NetworkManager would otherwise try to manage. A USB NIC that's
+# only ever plugged in for imaging doesn't need this - NetworkManager simply
+# never sees it outside an imaging session.
+#
+# Without this, NetworkManager will not apply jog-force-imaging-nic-up.sh's
+# static IP to a carrier-less onboard link at all, and may clear it again
+# whenever the cable's link state changes.
+#
+# Copy to /etc/NetworkManager/conf.d/99-jog-unmanaged.conf, replacing the
+# interface name, then: sudo systemctl reload NetworkManager
+
+[keyfile]
+unmanaged-devices=interface-name:REPLACE_ME_eth0

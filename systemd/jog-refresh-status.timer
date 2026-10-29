@@ -1,0 +1,10 @@
+[Unit]
+Description=JOG — periodic status refresh for kiosk
+
+[Timer]
+OnBootSec=15
+OnUnitActiveSec=10
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target

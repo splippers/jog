@@ -1,0 +1,37 @@
+# Local secrets
+.env
+*.swp
+*~
+
+# Generated autoinstall (contains hashed password after render)
+installer/autoinstall/user-data
+installer/autoinstall/user-data.hyperv
+
+# -----------------------------------------------------------------------------
+# Third-party / binary install media (never commit)
+# -----------------------------------------------------------------------------
+*.deb
+*.rpm
+*.AppImage
+*.msix
+*.msi
+*.exe
+*.dll
+*.partial
+*.iso
+
+# Ubuntu live-server + CIDATA seeds produced by installer/*.sh
+installer/ubuntu-*-live-server-amd64.iso
+installer/jog-autoinstall-seed.iso
+installer/**/*.iso
+
+# Hyper-V ISO remaster scratch (xorriso extract / staged files)
+installer/build/
+
+# Optional vendored trees
+third-party/
+thirdparty/
+vendor/
+
+# Local rolling log (FLINTNEEDLE / CSOP); not committed
+TRANSCRIPT.md

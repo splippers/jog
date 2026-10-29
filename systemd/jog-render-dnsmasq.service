@@ -1,0 +1,10 @@
+[Unit]
+Description=JOG — render dnsmasq USB-only imaging config
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/jog-render-dnsmasq.sh /etc/dnsmasq.d/99-jog-imaging.conf
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

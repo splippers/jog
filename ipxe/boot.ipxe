@@ -1,0 +1,20 @@
+#!ipxe
+
+# Portable boot script for JOG + JOS — Secure Boot OFF machines only (iPXE and a direct kernel load are not
+# verifiable). For Secure Boot use the shim chain: scripts/jos-stage-boot.sh in the jos repo (installed as jog-stage-jos-boot.sh).
+# Prefer DHCP-provided NEXT SERVER.
+
+isset ${next-server} || set next-server 10.0.0.5
+set base http://${next-server}
+
+echo NEXT SERVER: ${next-server}
+echo Booting JOS from: ${base}
+
+# These paths are placeholders: serve your signed kernel/initrd here.
+# Example:
+#   ${base}/jos/vmlinuz
+#   ${base}/jos/initrd.img
+kernel ${base}/jos/vmlinuz ip=dhcp rd.shell=0 quiet
+initrd ${base}/jos/initrd.img
+boot
+

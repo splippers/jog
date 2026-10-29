@@ -1,0 +1,15 @@
+# Optional: extra safety beside sensitive corporate LAN.
+# Install: sudo cp jog-isolate-imaging.nft.example /etc/nftables.d/jog-isolate-imaging.nft
+# Adjust interface names and 10.99.0.0/24 to match /etc/jog/jog.env
+#
+# Intent: traffic arriving on USB imaging NIC must not be forwarded to
+# onboard LAN/WiFi. Adjust or remove if you intentionally route PXE clients.
+
+table inet jog_isolate {
+  chain forward {
+    type filter hook forward priority filter; policy accept;
+
+    # Drop forward from imaging subnet to non-USB interfaces (tune iifname)
+    iifname "enx00e04c680001" oifname != "enx00e04c680001" ip saddr 10.99.0.0/24 drop
+  }
+}

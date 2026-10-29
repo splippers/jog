@@ -1,0 +1,12 @@
+[Unit]
+Description=JOG — native FOG install (one-shot, after jog.env is ready)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/jog-fog-install-once.sh
+
+[Install]
+WantedBy=multi-user.target

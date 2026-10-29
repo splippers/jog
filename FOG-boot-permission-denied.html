@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOG iPXE "Permission denied" Troubleshooting Guide</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f7f8fa;
+  --text: #1a1d23;
+  --text-secondary: #5c6370;
+  --border: #e5e7eb;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --code-bg: #1e293b;
+  --code-text: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --radius: 8px;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1218;
+    --bg-secondary: #1a1f29;
+    --text: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --border: #2d3441;
+    --accent: #60a5fa;
+    --accent-hover: #3b82f6;
+    --code-bg: #0b0f14;
+    --code-text: #d1d5db;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #0f1218;
+  --bg-secondary: #1a1f29;
+  --text: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --border: #2d3441;
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+  --code-bg: #0b0f14;
+  --code-text: #d1d5db;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+}
+
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-secondary: #f7f8fa;
+  --text: #1a1d23;
+  --text-secondary: #5c6370;
+  --border: #e5e7eb;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --code-bg: #1e293b;
+  --code-text: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+header {
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  color: white;
+  padding: 3rem 0 2rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+}
+
+header h1 {
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+header p {
+  font-size: 1.125rem;
+  opacity: 0.95;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.875rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.main-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+@media (max-width: 968px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+aside {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 968px) {
+  aside {
+    position: static;
+    max-height: none;
+  }
+}
+
+.toc {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.toc h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.toc ul {
+  list-style: none;
+}
+
+.toc li {
+  margin-bottom: 0.5rem;
+}
+
+.toc a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 0.9375rem;
+}
+
+.toc a:hover, .toc a.active {
+  color: var(--accent);
+  background: var(--bg);
+}
+
+.toc ul ul {
+  margin-top: 0.25rem;
+  margin-left: 1rem;
+}
+
+main {
+  min-width: 0;
+}
+
+section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+}
+
+section h2 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+section h3 {
+  font-size: 1.375rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+section h4 {
+  font-size: 1.125rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+section p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.icon {
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+}
+
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
+  border-left: 4px solid;
+}
+
+.alert-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--warning);
+  color: var(--text);
+}
+
+.alert-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  color: var(--text);
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+  color: var(--text);
+}
+
+.alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.code-block {
+  position: relative;
+  margin: 1rem 0;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  border: 1px solid var(--border);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--bg);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--code-text);
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+ul, ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+li strong {
+  color: var(--text);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9375rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--text);
+}
+
+td {
+  color: var(--text-secondary);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.error-preview {
+  background: #000;
+  color: #00ff00;
+  font-family: var(--font-mono);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
+  border: 2px solid #333;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.error-preview .error-line {
+  color: #ff5555;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.625rem 1.25rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.checklist {
+  list-style: none;
+  margin-left: 0;
+}
+
+.checklist li {
+  padding-left: 2rem;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.checklist li::before {
+  content: "☐";
+  position: absolute;
+  left: 0;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.step {
+  counter-increment: step;
+  margin-bottom: 2rem;
+  padding-left: 3rem;
+  position: relative;
+}
+
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.steps {
+  counter-reset: step;
+}
+
+footer {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}
+
+kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.125rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  box-shadow: 0 2px 0 var(--border);
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="container header-content">
+    <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+    <h1>FOG iPXE "Permission denied" Troubleshooting</h1>
+    <p>Complete guide to diagnosing and fixing common FOG boot errors</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="main-layout">
+    <aside>
+      <nav class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+          <li><a href="#overview">1. Error Overview</a></li>
+          <li><a href="#diagnosis">2. Quick Diagnosis</a></li>
+          <li><a href="#fixes">3. Step-by-Step Fixes</a>
+            <ul>
+              <li><a href="#apache-perms">3.1 Apache Permissions</a></li>
+              <li><a href="#selinux">3.2 SELinux Issues</a></li>
+              <li><a href="#password-mismatch">3.3 Storage Node Password</a></li>
+              <li><a href="#ssl-cert">3.4 SSL Certificate</a></li>
+              <li><a href="#apache-config">3.5 Apache/HTAccess</a></li>
+            </ul>
+          </li>
+          <li><a href="#commands">4. OS Commands</a></li>
+          <li><a href="#ipxe-test">5. iPXE Shell Testing</a></li>
+          <li><a href="#logs">6. Log Locations</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="overview">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          1. Error Overview
+        </h2>
+        <p>The <code>Permission denied</code> error in FOG iPXE typically occurs during the boot chain when undionly.kpxe or ipxe.efi tries to fetch <code>default.ipxe</code>, kernel, or initrd files from the FOG server over HTTP/HTTPS.</p>
+        
+        <h3>Typical Screenshot Details</h3>
+        <div class="error-preview">
+iPXE initialising devices...ok<br>
+<br>
+iPXE 1.21.1+ (g1234) -- Open Source Network Boot Firmware<br>
+Features: DNS HTTP HTTPS iSCSI NFS TFTP VLAN SRP AoE EFI Menu<br>
+<br>
+net0: 00:11:22:33:44:55 using undionly on PCI00:03.0 (open)<br>
+  [Link:up, TX:0 TXE:0 RXE:0]<br>
+  [DHCP (net0 00:11:22:33:44:55).......... ok]<br>
+net0: 192.168.1.100/255.255.255.0 gw 192.168.1.1<br>
+Next server: 192.168.1.10<br>
+Filename: default.ipxe<br>
+<br>
+https://192.168.1.10/fog/service/ipxe/boot.php... <span class="error-line">Permission denied (http://ipxe.org/2c618c03)</span><br>
+Could not boot: Permission denied (http://ipxe.org/2c618c03)<br>
+No more network devices<br>
+        </div>
+
+        <div class="alert alert-info">
+          <strong>Error Code 2c618c03:</strong> This iPXE error means the HTTP server returned <code>403 Forbidden</code> or <code>401 Unauthorized</code>. The client connected successfully but the server actively denied access to the requested file.
+        </div>
+
+        <h3>Common Symptoms</h3>
+        <ul>
+          <li>Clients get DHCP and contact FOG server but fail to load <code>boot.php</code> or <code>bg.png</code></li>
+          <li>Works for undionly.kpxe but fails for ipxe.efi or vice versa</li>
+          <li>Error occurs only after FOG update, SSL cert change, or OS patching</li>
+          <li>Direct browser access to <code>https://fog-server/fog/service/ipxe/boot.php</code> shows 403/401</li>
+        </ul>
+      </section>
+
+      <section id="diagnosis">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+          2. Quick Diagnosis Checklist
+        </h2>
+        <p>Run through this checklist before diving into specific fixes. This isolates the problem to server config, storage nodes, or SSL.</p>
+        
+        <ul class="checklist">
+          <li>Can you access <code>http(s)://fog-server/fog/management</code> from a browser? If no, Apache is down or firewall blocked.</li>
+          <li>Does <code>curl -k https://localhost/fog/service/ipxe/boot.php</code> from FOG server return PHP output or 403/401?</li>
+          <li>Check Apache error log while triggering the boot: <code>tail -f /var/log/apache2/error.log</code> or <code>/var/log/httpd/error_log</code></li>
+          <li>Is SELinux enforcing? Run <code>getenforce</code>. If "Enforcing", check audit log.</li>
+          <li>Did you recently change FOG web UI password or run <code>installfog.sh</code>? Storage node password may be out of sync.</li>
+          <li>Are you using HTTPS with self-signed certs? iPXE builds before 2019 don't trust them by default.</li>
+          <li>Check file permissions: <code>ls -la /var/www/html/fog/service/ipxe/</code>. Should be readable by Apache user.</li>
+          <li>If using multiple storage nodes, does the issue affect all nodes or just one?</li>
+        </ul>
+
+        <div class="alert alert-warning">
+          <strong>iPXE Shell Test:</strong> Drop to iPXE shell during boot by pressing <kbd>Ctrl</kbd>+<kbd>B</kbd> when you see "Press Ctrl+B". Then run <code>dhcp</code> and <code>imgfetch https://fog-ip/fog/service/ipxe/boot.php</code> to see the exact HTTP error code.
+        </div>
+      </section>
+
+      <section id="fixes">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          3. Step-by-Step Fixes for Common Causes
+        </h2>
+
+        <div id="apache-perms">
+          <h3>3.1 Apache File Permissions</h3>
+          <p>Most common cause. Apache user <code>www-data</code> or <code>apache</code> must read FOG web files and iPXE scripts.</p>
+          <div class="steps">
+            <div class="step">
+              <h4>Verify Apache User</h4>
+              <div class="code-block">
+                <pre><code># Ubuntu/Debian
+ps aux | grep apache2 | grep -v grep
+# RHEL/CentOS/Rocky
+ps aux | grep httpd | grep -v grep</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>Note the user, typically <code>www-data</code> on Ubuntu or <code>apache</code> on RHEL.</p>
+            </div>
+            <div class="step">
+              <h4>Fix Ownership and Permissions</h4>
+              <div class="code-block">
+                <pre><code># Ubuntu/Debian
+sudo chown -R www-data:www-data /var/www/html/fog
+sudo find /var/www/html/fog -type d -exec chmod 755 {} \;
+sudo find /var/www/html/fog -type f -exec chmod 644 {} \;
+
+# RHEL/CentOS/Rocky
+sudo chown -R apache:apache /var/www/html/fog
+sudo find /var/www/html/fog -type d -exec chmod 755 {} \;
+sudo find /var/www/html/fog -type f -exec chmod 644 {} \;</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            </div>
+            <div class="step">
+              <h4>Restart Apache</h4>
+              <div class="code-block">
+                <pre><code># Ubuntu/Debian
+sudo systemctl restart apache2
+
+# RHEL/CentOS
+sudo systemctl restart httpd</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="selinux" style="margin-top:2rem;">
+          <h3>3.2 SELinux Context Violations</h3>
+          <p>If SELinux is in Enforcing mode, it will block Apache from reading files with wrong context, returning 403.</p>
+          <div class="steps">
+            <div class="step">
+              <h4>Check SELinux Status</h4>
+              <div class="code-block">
+                <pre><code>getenforce
+sestatus</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>If it returns <code>Enforcing</code>, continue. If <code>Disabled</code> or <code>Permissive</code>, skip this section.</p>
+            </div>
+            <div class="step">
+              <h4>Check for Denials</h4>
+              <div class="code-block">
+                <pre><code>sudo ausearch -m AVC -ts recent
+# Or check log directly
+sudo tail -50 /var/log/audit/audit.log | grep denied</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>Look for <code>httpd</code> denials on <code>/var/www/html/fog</code>.</p>
+            </div>
+            <div class="step">
+              <h4>Restore Correct Contexts</h4>
+              <div class="code-block">
+                <pre><code>sudo restorecon -Rv /var/www/html/fog
+sudo setsebool -P httpd_can_network_connect 1
+sudo setsebool -P httpd_unified 1</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>If you store images outside /images, also run: <code>sudo chcon -R -t httpd_sys_content_t /your/path</code></p>
+            </div>
+            <div class="step">
+              <h4>Test: Temporarily Set Permissive</h4>
+              <div class="alert alert-warning">
+                <strong>For testing only.</strong> If setting permissive fixes boot, you have a confirmed SELinux issue.
+              </div>
+              <div class="code-block">
+                <pre><code>sudo setenforce 0
+# Test PXE boot now
+# Set back after testing
+sudo setenforce 1</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="password-mismatch" style="margin-top:2rem;">
+          <h3>3.3 FOG Storage Node Password Mismatch</h3>
+          <p>If you changed the FOG web UI password for user <code>fogproject</code> but didn't update Storage Node settings, iPXE scripts calling <code>boot.php</code> with credentials will fail.</p>
+          <div class="steps">
+            <div class="step">
+              <h4>Find Current Storage Password</h4>
+              <div class="code-block">
+                <pre><code>sudo grep -i 'password' /opt/fog/.fogsettings</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>Note the <code>fogstorageftp</code> or <code>password</code> value.</p>
+            </div>
+            <div class="step">
+              <h4>Update in FOG Web UI</h4>
+              <p>Login to FOG Management: <code>Storage Management > [Your Node] > Management Username/Password</code></p>
+              <p>Set Username: <code>fogproject</code> and Password: value from .fogsettings</p>
+              <p>Also check: <code>FOG Configuration > FOG Settings > TFTP Server > FOG_TFTP_FTP_PASSWORD</code></p>
+            </div>
+            <div class="step">
+              <h4>Sync to All Nodes</h4>
+              <p>If you have multiple storage nodes, update each node's config with the same credentials. Mismatched nodes cause intermittent 403s.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="ssl-cert" style="margin-top:2rem;">
+          <h3>3.4 SSL Certificate Issues</h3>
+          <p>iPXE requires a valid cert chain. Self-signed certs or expired certs cause HTTPS boot.php requests to fail silently as "Permission denied".</p>
+          <div class="alert alert-danger">
+            <strong>iPXE Quirk:</strong> Undionly.kpxe built before Aug 2019 has no CA bundle. It cannot validate HTTPS at all unless you recompile iPXE with <code>DOWNLOAD_PROTO_HTTPS</code> and embed your CA.
+          </div>
+          <div class="steps">
+            <div class="step">
+              <h4>Option A: Force HTTP for iPXE</h4>
+              <p>Edit <code>FOG Configuration > FOG Settings > Web Server > FOG_WEB_HOST</code> and change <code>https://</code> to <code>http://</code>. Also update <code>FOG Configuration > FOG Settings > TFTP Server > FOG_PXE_BOOT_IMAGE</code></p>
+              <div class="code-block">
+                <pre><code># In FOG_WEB_HOST field, use:
+http://fog-server-ip</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            </div>
+            <div class="step">
+              <h4>Option B: Trust Self-Signed Cert in iPXE</h4>
+              <p>Rebuild iPXE with your CA cert. For most users, easier to use HTTP or Let's Encrypt.</p>
+              <div class="code-block">
+                <pre><code>cd /opt/fog/utils/FOGiPXE/
+./buildipxe.sh</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            <div class="step">
+              <h4>Option C: Use Valid Cert</h4>
+              <p>Install Let's Encrypt via certbot, or import commercial cert into Apache. Ensure full chain is configured in Apache SSL config.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="apache-config" style="margin-top:2rem;">
+          <h3>3.5 .htaccess / Apache Config Restrictions</h3>
+          <p>Custom Apache rules or <code>.htaccess</code> in <code>/fog/service/ipxe/</code> can block iPXE clients which don't send standard browser headers.</p>
+          <div class="steps">
+            <div class="step">
+              <h4>Check for .htaccess</h4>
+              <div class="code-block">
+                <pre><code>ls -la /var/www/html/fog/service/ipxe/.htaccess
+sudo cat /var/www/html/fog/service/ipxe/.htaccess</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>FOG default has no .htaccess here. If present, rename it: <code>sudo mv .htaccess .htaccess.bak</code></p>
+            </div>
+            <div class="step">
+              <h4>Check Apache Directory Directives</h4>
+              <div class="code-block">
+                <pre><code># Ubuntu
+sudo grep -r "Deny" /etc/apache2/
+sudo nano /etc/apache2/sites-enabled/001-fog.conf
+
+# RHEL
+sudo grep -r "Deny" /etc/httpd/
+sudo nano /etc/httpd/conf.d/fog.conf</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+              <p>Ensure <code>&lt;Directory /var/www/html/fog&gt;</code> has <code>Require all granted</code> not <code>Require ip 127.0.0.1</code></p>
+            </div>
+            <div class="step">
+              <h4>Disable ModSecurity Temporarily</h4>
+              <p>ModSecurity WAF can block iPXE clients. Check logs and whitelist if needed.</p>
+              <div class="code-block">
+                <pre><code># Check if enabled
+apache2ctl -M | grep security2
+# Temporarily disable in fog.conf:
+SecRuleEngine Off</code></pre>
+                <button class="copy-btn">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="commands">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          4. Commands by OS Distro
+        </h2>
+        
+        <div class="tabs">
+          <button class="tab active" data-tab="ubuntu">Ubuntu/Debian</button>
+          <button class="tab" data-tab="rhel">RHEL/CentOS/Rocky</button>
+        </div>
+
+        <div class="tab-content active" id="ubuntu">
+          <h4>Apache Service</h4>
+          <div class="code-block">
+            <pre><code>sudo systemctl status apache2
+sudo systemctl restart apache2
+sudo systemctl reload apache2
+sudo apache2ctl configtest</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>Check Logs</h4>
+          <div class="code-block">
+            <pre><code>sudo tail -f /var/log/apache2/error.log
+sudo tail -f /var/log/apache2/access.log
+sudo tail -f /var/log/php*-fpm.log</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>Test Local HTTP</h4>
+          <div class="code-block">
+            <pre><code>curl -v http://localhost/fog/service/ipxe/boot.php
+wget -O- http://localhost/fog/service/ipxe/boot.php</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>FOG Re-run Installer</h4>
+          <div class="code-block">
+            <pre><code>cd /path/to/fogproject/bin
+sudo ./installfog.sh -y</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+        </div>
+
+        <div class="tab-content" id="rhel">
+          <h4>Apache Service</h4>
+          <div class="code-block">
+            <pre><code>sudo systemctl status httpd
+sudo systemctl restart httpd
+sudo systemctl reload httpd
+sudo apachectl configtest</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>Check Logs</h4>
+          <div class="code-block">
+            <pre><code>sudo tail -f /var/log/httpd/error_log
+sudo tail -f /var/log/httpd/access_log
+sudo tail -f /var/log/php-fpm/error.log</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>SELinux Audit</h4>
+          <div class="code-block">
+            <pre><code>sudo ausearch -m AVC -ts recent
+sudo sealert -a /var/log/audit/audit.log
+sudo semanage fcontext -l | grep fog</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+
+          <h4>Firewall Check</h4>
+          <div class="code-block">
+            <pre><code>sudo firewall-cmd --list-all
+sudo firewall-cmd --add-service=http --permanent
+sudo firewall-cmd --add-service=https --permanent
+sudo firewall-cmd --reload</code></pre>
+            <button class="copy-btn">Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="ipxe-test">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          5. How to Test in iPXE Shell
+        </h2>
+        <p>Drop into the iPXE command line to manually test URL access and see detailed HTTP responses.</p>
+        
+        <div class="steps">
+          <div class="step">
+            <h4>Enter iPXE Shell</h4>
+            <p>During FOG boot, when you see <code>Press Ctrl+B for iPXE prompt</code>, hit <kbd>Ctrl</kbd>+<kbd>B</kbd> quickly.</p>
+          </div>
+          <div class="step">
+            <h4>Initialize DHCP</h4>
+            <div class="code-block">
+              <pre><code>iPXE> dhcp
+iPXE> ifstat</code></pre>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <p>Confirm you have an IP address on <code>net0</code>.</p>
+          </div>
+          <div class="step">
+            <h4>Test boot.php Access</h4>
+            <div class="code-block">
+              <pre><code>iPXE> imgfetch http://192.168.1.10/fog/service/ipxe/boot.php
+iPXE> imgstat</code></pre>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <p>If you see <code>HTTP 403 Forbidden</code> or <code>401 Unauthorized</code>, it's server-side. If <code>Operation not supported</code>, it's HTTPS cert issue.</p>
+          </div>
+          <div class="step">
+            <h4>Test with Credentials</h4>
+            <p>If your FOG uses basic auth:</p>
+            <div class="code-block">
+              <pre><code>iPXE> imgfetch http://fogproject:password@192.168.1.10/fog/service/ipxe/boot.php</code></pre>
+              <button class="copy-btn">Copy</button>
+            </div>
+          <div class="step">
+            <h4>Chain Manually</h4>
+            <div class="code-block">
+              <pre><code>iPXE> chain http://192.168.1.10/fog/service/ipxe/boot.php?mac=${net0/mac}</code></pre>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <p>This mimics exactly what undionly.kpxe does. If it works here but not auto-boot, check DHCP option 67 filename.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="logs">
+        <h2>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          6. Log File Locations
+        </h2>
+        <p>Check these logs in real-time while triggering a PXE boot to catch the exact error.</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Ubuntu/Debian Path</th>
+              <th>RHEL/CentOS Path</th>
+              <th>What to Look For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Apache Error</strong></td>
+              <td><code>/var/log/apache2/error.log</code></td>
+              <td><code>/var/log/httpd/error_log</code></td>
+              <td>403, 401, "Permission denied", "client denied by server configuration"</td>
+            </tr>
+            <tr>
+              <td><strong>Apache Access</strong></td>
+              <td><code>/var/log/apache2/access.log</code></td>
+              <td><code>/var/log/httpd/access_log</code></td>
+              <td>HTTP status code for <code>/fog/service/ipxe/boot.php</code></td>
+            </tr>
+            <tr>
+              <td><strong>PHP-FPM</strong></td>
+              <td><code>/var/log/php8.1-fpm.log</code></td>
+              <td><code>/var/log/php-fpm/error.log</code></td>
+              <td>PHP fatal errors, permission issues loading scripts</td>
+            </tr>
+            <tr>
+              <td><strong>SELinux Audit</strong></td>
+              <td><code>/var/log/audit/audit.log</code></td>
+              <td><code>/var/log/audit/audit.log</code></td>
+              <td><code>type=AVC msg=audit</code> denials for httpd</td>
+            </tr>
+            <tr>
+              <td><strong>FOG Multicast</strong></td>
+              <td><code>/opt/fog/log/multicast.log</code></td>
+              <td><code>/opt/fog/log/multicast.log</code></td>
+              <td>Not relevant for boot.php but useful for imaging</td>
+            </tr>
+            <tr>
+              <td><strong>FOG Scheduler</strong></td>
+              <td><code>/opt/fog/log/fogscheduler.log</code></td>
+              <td><code>/opt/fog/log/fogscheduler.log</code></td>
+              <td>Task creation issues</td>
+            </tr>
+            <tr>
+              <td><strong>Syslog</strong></td>
+              <td><code>/var/log/syslog</code></td>
+              <td><code>/var/log/messages</code></td>
+              <td>General system errors, OOM, network</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-success" style="margin-top: 1.5rem;">
+          <strong>Pro Tip:</strong> Open 2 terminals: <code>tail -f /var/log/apache2/error.log</code> in one, and watch the PXE boot in the other. The error will appear instantly when the client requests boot.php.
+        </div>
+
+        <h3>Quick One-Liner Log Watch</h3>
+        <div class="code-block">
+          <pre><code># Monitor all relevant logs at once
+sudo tail -f /var/log/apache2/error.log /var/log/apache2/access.log /var/log/audit/audit.log</code></pre>
+          <button class="copy-btn">Copy</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>FOG iPXE Troubleshooting Guide | Last updated: 2024 | For FOG Project 1.5.x+</p>
+    <p>Refer to <a href="https://docs.fogproject.org/en/stable/" style="color: var(--accent);">FOG Documentation</a> and <a href="https://ipxe.org/err" style="color: var(--accent);">iPXE Error Codes</a></p>
+  </div>
+</footer>
+
+<script>
+  // Theme Toggle
+  const themeToggle = document.getElementById('themeToggle');
+  const html = document.documentElement;
+  
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    html.setAttribute('data-theme', savedTheme);
+  }
+  
+  themeToggle.addEventListener('click', () => {
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  });
+
+  // Copy Buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.previousElementSibling.textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    });
+  });
+
+  // Active TOC Link on Scroll
+  const sections = document.querySelectorAll('section[id]');
+  const tocLinks = document.querySelectorAll('.toc a');
+  
+  function updateActiveLink() {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 100;
+      if (window.scrollY >= sectionTop) {
+        current = section.getAttribute('id');
+      }
+    });
+    
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  }
+  
+  window.addEventListener('scroll', updateActiveLink);
+  updateActiveLink();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[Unit]
+Description=JOG unattended first-boot (Hyper-V / single-NIC lab)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/jog/unattended.active
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/jog-first-boot-unattended.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

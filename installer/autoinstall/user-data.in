@@ -1,0 +1,35 @@
+#cloud-config
+# JOG autoinstall target: Ubuntu Server 26.04 LTS (Subiquity) amd64 live-server ISO
+# + CIDATA seed ISO (see docs/ISO-BUILD.md).
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  refresh-installer:
+    update: false
+  identity:
+    hostname: jog-base
+    username: jogadmin
+    password: '@PASSWORD@'
+  ssh:
+    install-server: true
+    allow-pw: true
+  network:
+    network:
+      version: 2
+      ethernets: {}
+  storage:
+    layout:
+      name: direct
+  packages:
+    - dialog
+    - dnsmasq
+    - git
+    - curl
+    - openssl
+  late-commands:
+    - curtin in-target --target=/target -- bash -lc 'git clone https://github.com/splippers/JOG.git /opt/JOG || (cd /opt/JOG && git pull || true)'
+    - curtin in-target --target=/target -- install -m 0755 /opt/JOG/installer/jog-install-wizard.sh /usr/local/sbin/jog-install-wizard.sh
+    - curtin in-target --target=/target -- install -m 0644 /opt/JOG/installer/motd/jog-remind.sh /etc/profile.d/jog-remind.sh
+    - curtin in-target --target=/target -- env JOG_SKIP_SYSTEMD=1 bash /opt/JOG/install/jog-install.sh || true

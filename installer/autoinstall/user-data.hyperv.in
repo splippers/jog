@@ -1,0 +1,40 @@
+#cloud-config
+# JOG — single Hyper-V DVD (embedded nocloud). See installer/build-hyperv-single-iso.sh
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  refresh-installer:
+    update: false
+  identity:
+    hostname: jog-hyperv
+    username: jogadmin
+    password: '@PASSWORD@'
+  ssh:
+    install-server: true
+    allow-pw: true
+  # Hyper-V synthetic NIC: explicit DHCP so APT can reach mirrors during late-commands (git clone).
+  # Do not list autoinstall `packages:` here — without outbound HTTP/DNS that phase fails with exit 100.
+  # Prerequisite debs are installed early in jog-first-boot-unattended.sh (before imaging-only netplan).
+  network:
+    network:
+      version: 2
+      ethernets:
+        hv-net:
+          optional: true
+          dhcp4: true
+          dhcp-identifier: mac
+          match:
+            driver: hv_netvsc
+  storage:
+    layout:
+      name: direct
+  late-commands:
+    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 https://github.com/splippers/JOG.git /opt/JOG || (cd /opt/JOG && git pull --ff-only || true)'
+    - curtin in-target --target=/target -- env JOG_SKIP_SYSTEMD=1 bash /opt/JOG/install/jog-install.sh || true
+    # Bundled on this ISO (see installer/build-hyperv-single-iso.sh) so the remaster works before GitHub main contains these files.
+    - curtin in-target --target=/target -- install -m 0755 /cdrom/installer-extra/jog-first-boot-unattended.sh /usr/local/bin/jog-first-boot-unattended.sh
+    - curtin in-target --target=/target -- install -m 0644 /cdrom/installer-extra/jog-first-boot-unattended.service /etc/systemd/system/jog-first-boot-unattended.service
+    - curtin in-target --target=/target -- touch /etc/jog/unattended.active
+    - curtin in-target --target=/target -- bash -lc 'systemctl daemon-reload; systemctl enable jog-first-boot-unattended.service'
