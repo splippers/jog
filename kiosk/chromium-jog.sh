@@ -13,6 +13,7 @@ source "$JOG_ENV"
 : "${JOG_FOG_URL:=http://localhost/fog/management/}"
 : "${JOG_FOG_TASKS_URL:=}"
 : "${JOG_STATUS_URL:=file:///var/lib/jog/status/index.html}"
+: "${JOG_IMAGING_URL:=http://127.0.0.1:8088/}"   # live imaging view (jog-imaging-api); set empty to omit
 : "${JOG_CHROMIUM_RESTART:=1}"
 
 CHROME="${CHROME:-}"
@@ -41,7 +42,9 @@ fi
 
 run_once() {
   local -a TABS
-  TABS=( "$JOG_FOG_URL" )
+  TABS=()
+  [[ -n "$JOG_IMAGING_URL" ]] && TABS+=( "$JOG_IMAGING_URL" )
+  TABS+=( "$JOG_FOG_URL" )
   if [[ -n "${JOG_FOG_TASKS_URL:-}" && "${JOG_FOG_TASKS_URL}" != "${JOG_FOG_URL}" ]]; then
     TABS+=( "$JOG_FOG_TASKS_URL" )
   fi

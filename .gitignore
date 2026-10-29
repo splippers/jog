@@ -35,3 +35,4 @@ vendor/
 
 # Local rolling log (FLINTNEEDLE / CSOP); not committed
 TRANSCRIPT.md
+__pycache__/

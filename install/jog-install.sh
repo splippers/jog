@@ -45,6 +45,14 @@ install -m 0644 "${ROOT}/systemd/jog-render-dnsmasq.service" /etc/systemd/system
 install -m 0644 "${ROOT}/systemd/jog-force-imaging-nic-up.service" /etc/systemd/system/jog-force-imaging-nic-up.service
 install -m 0644 "${ROOT}/systemd/jog-fog-install.service" /etc/systemd/system/jog-fog-install.service
 
+# Live imaging view (kiosk page + local API, bound to 127.0.0.1). Needs /etc/jog/fog-api.env to show live data.
+install -m 0755 "${ROOT}/scripts/jog-imaging-api.py" /usr/local/bin/jog-imaging-api.py
+install -d /usr/local/share/jog/imaging
+install -m 0644 "${ROOT}"/kiosk/imaging/* /usr/local/share/jog/imaging/
+install -m 0644 "${ROOT}/systemd/jog-imaging-api.service" /etc/systemd/system/jog-imaging-api.service
+install -d -m 0755 /etc/jog
+[[ -f /etc/jog/fog-api.env ]] || install -m 0600 "${ROOT}/config/fog-api.env.example" /etc/jog/fog-api.env
+
 mkdir -p /etc/systemd/system/dnsmasq.service.d
 install -m 0644 "${ROOT}/systemd/dnsmasq.service.d/jog-pre.conf" /etc/systemd/system/dnsmasq.service.d/jog-pre.conf
 
@@ -62,6 +70,7 @@ if [[ "${JOG_SKIP_SYSTEMD:-0}" != "1" ]] && [[ -d /run/systemd/system ]]; then
   systemctl enable jog-render-dnsmasq.service || true
   systemctl enable jog-force-imaging-nic-up.service || true
   systemctl enable --now jog-refresh-status.timer || true
+  systemctl enable --now jog-imaging-api.service || true
   systemctl enable jog-fog-install.service || true
 fi
 

@@ -1,0 +1,25 @@
+[Unit]
+Description=JOG live imaging view (local API + kiosk page)
+After=network-online.target apache2.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+# The FOG API tokens stay root-owned; systemd hands the service a private copy.
+LoadCredential=fog-api.env:/etc/jog/fog-api.env
+Environment=JOG_FOG_API_ENV=%d/fog-api.env
+Environment=JOG_IMAGING_STATIC=/usr/local/share/jog/imaging
+ExecStart=/usr/local/bin/jog-imaging-api.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JOG Imaging</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">JOG</span><span class="sub">Imaging</span></div>
+  <div class="meta">
+    <span class="chip" id="mode" hidden></span>
+    <span class="conn" id="conn" role="status"><i></i><span>Connecting</span></span>
+    <time id="clock"></time>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" role="alert" hidden></div>
+
+  <section class="tiles" aria-label="Summary">
+    <div class="tile t-imaging"><span class="label">Imaging</span><span class="num" id="n-imaging">0</span></div>
+    <div class="tile t-queued"><span class="label">Queued</span><span class="num" id="n-queued">0</span></div>
+    <div class="tile t-complete"><span class="label">Complete</span><span class="num" id="n-complete">0</span></div>
+    <div class="tile t-failed"><span class="label">Failed</span><span class="num" id="n-failed">0</span></div>
+  </section>
+
+  <section id="grid" class="grid" aria-label="Devices"></section>
+
+  <div class="empty" id="empty" hidden>
+    <div class="empty-mark" aria-hidden="true"></div>
+    <h2>Ready for devices</h2>
+    <p>Connect equipment, boot it from the network, and walk away.</p>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
