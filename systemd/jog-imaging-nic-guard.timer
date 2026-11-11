@@ -1,0 +1,11 @@
+[Unit]
+Description=JOG — keep the imaging NIC address present (survives netplan apply)
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=10s
+AccuracySec=1s
+Unit=jog-imaging-nic-guard.service
+
+[Install]
+WantedBy=timers.target
