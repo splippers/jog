@@ -60,6 +60,27 @@ sudo apt install -y xorriso openssl curl
 
 Outputs **`installer/ubuntu-26.04-live-server-jog-hyperv-amd64.iso`** (override with **`OUT_ISO=...`**). The builder **xorriso-clones** Canonical’s live-server ISO, patches **`/boot/grub/grub.cfg`** and **`/boot/grub/loopback.cfg`** so the installer gets **`autoinstall`** + **`ds=nocloud\;s=/cdrom/nocloud/`**, adds **`/nocloud/`** (rendered **`user-data.hyperv`**), and **`/installer-extra/`** first-boot helpers.
 
+The one-ISO builder accepts optional imaging-network settings as environment variables; omitted settings use the isolated lab defaults below. The builder validates the subnet, DHCP pool, router, and TFTP address before producing the ISO:
+
+| Variable | Default |
+|---|---|
+| `JOG_UNATTEND_IFACE` | First detected Ethernet interface at first boot |
+| `JOG_UNATTEND_IMAGING_IP` | `10.99.0.1` |
+| `JOG_UNATTEND_PREFIX` | `24` |
+| `JOG_UNATTEND_DHCP_START` / `JOG_UNATTEND_DHCP_END` | `10.99.0.100` / `10.99.0.250` |
+| `JOG_UNATTEND_ROUTER` / `JOG_UNATTEND_NEXT_SERVER` | Same as `JOG_UNATTEND_IMAGING_IP` |
+
+For example, set the values before building to use a different isolated subnet:
+
+```bash
+JOG_UNATTEND_IMAGING_IP=192.168.50.1 \
+JOG_UNATTEND_DHCP_START=192.168.50.100 \
+JOG_UNATTEND_DHCP_END=192.168.50.200 \
+./installer/build-hyperv-single-iso.sh 'YOUR-JOGADMIN-PASSWORD'
+```
+
+`JOG_UNATTEND_IFACE` can pin the image to a specific interface name, but leave it unset for hardware-independent builds. This DHCP network must be isolated from corporate DHCP. The regular two-ISO flow instead presents the same address/pool choices in `jog-install-wizard`; pressing Enter or cancelling an address field keeps its displayed default.
+
 Attach that ISO as the VM’s DVD, boot once, let autoinstall finish.
 
 **Hyper-V:** use a **Generation 2** VM with the ISO as the boot DVD (UEFI). If Windows reports **could not find a valid bootloader**, use an ISO built with **`build-hyperv-single-iso.sh`** from current `main`: older builds used **`xorriso -boot_image any keep`**, which broke the hybrid **GPT / El Torito** layout after patching GRUB — rebuild fixes it (`-boot_image any replay`).
@@ -70,7 +91,7 @@ Attach that ISO as the VM’s DVD, boot once, let autoinstall finish.
 
 ### After the VM reboots
 
-A **systemd oneshot** applies **`10.99.0.1/24`**-style defaults on the **first Ethernet NIC**, runs **`jog-provision-stack.sh --blocking-fog`** (EFI → **`/tftpboot/ubuntu-signed`**, dnsmasq, **blocking** **`fog-native-install.sh`**), touches **`/etc/jog/wizard.done`** — no interactive **`jog-install-wizard`** on this path.
+A **systemd oneshot** applies the configured imaging address (default **`10.99.0.1/24`**) on the selected interface (by default the first detected Ethernet interface), runs **`jog-provision-stack.sh --blocking-fog`** (EFI → **`/tftpboot/ubuntu-signed`**, dnsmasq, **blocking** **`fog-native-install.sh`**), touches **`/etc/jog/wizard.done`** — no interactive **`jog-install-wizard`** on this path.
 
 For a **graphical Chromium kiosk on the VM** (same **X11 / LightDM** stack as physical Latitudes), run **`sudo jog-setup-reliable-kiosk.sh jogadmin`** after login (large download). For production laptops you usually want the **two-ISO + wizard** flow so **`enx…`** USB imaging can be chosen explicitly.
 

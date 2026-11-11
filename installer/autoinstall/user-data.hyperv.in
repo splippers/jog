@@ -36,5 +36,6 @@ autoinstall:
     # Bundled on this ISO (see installer/build-hyperv-single-iso.sh) so the remaster works before GitHub main contains these files.
     - curtin in-target --target=/target -- install -m 0755 /cdrom/installer-extra/jog-first-boot-unattended.sh /usr/local/bin/jog-first-boot-unattended.sh
     - curtin in-target --target=/target -- install -m 0644 /cdrom/installer-extra/jog-first-boot-unattended.service /etc/systemd/system/jog-first-boot-unattended.service
+    - curtin in-target --target=/target -- install -D -m 0600 /cdrom/installer-extra/jog-unattended-network.env /etc/jog/unattended-network.env
     - curtin in-target --target=/target -- touch /etc/jog/unattended.active
     - curtin in-target --target=/target -- bash -lc 'systemctl daemon-reload; systemctl enable jog-first-boot-unattended.service'

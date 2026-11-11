@@ -20,9 +20,9 @@ else
 fi
 [[ -x "${REPO_ROOT}/install/fog-native-install.sh" ]] || die "JOG repo not found at ${REPO_ROOT} (set JOG_REPO=...)"
 
-if ! command -v dialog >/dev/null 2>&1; then
+if ! command -v dialog >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
   apt-get update -qq
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq dialog
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq dialog python3
 fi
 
 # --- Defaults (sensible isolated imaging subnet) ---
@@ -61,7 +61,7 @@ HOSTNAME="$($DIALOG --stdout --title "Hostname" --inputbox "Short hostname for t
 [[ -n "${HOSTNAME// }" ]] || HOSTNAME="$DEF_HOSTNAME"
 
 # --- Imaging NIC menu (USB recommended; onboard allowed with confirmation) ---
-mapfile -t IFACES < <(ip -br link show | awk '$1!="lo"{print $1}' | grep -v '^lo$' || true)
+mapfile -t IFACES < <(ip -br link show type ether | awk '$1!="lo"{print $1}' || true)
 [[ "${#IFACES[@]}" -gt 0 ]] || die "No non-loopback interfaces found."
 
 IFACE_ITEMS=()
@@ -99,11 +99,51 @@ IMAGING_IP="$($DIALOG --stdout --title "Imaging IP" --inputbox "Static IP on the
 PREFIX="$($DIALOG --stdout --title "Prefix" --inputbox "CIDR prefix length (usually 24):" 10 60 "${DEF_PREFIX}" || true)"
 DHCP_START="$($DIALOG --stdout --title "DHCP start" --inputbox "DHCP pool first address:" 10 60 "${DEF_DHCP_START}" || true)"
 DHCP_END="$($DIALOG --stdout --title "DHCP end" --inputbox "DHCP pool last address:" 10 60 "${DEF_DHCP_END}" || true)"
+IMAGING_IP="${IMAGING_IP:-$DEF_IMAGING_IP}"
+PREFIX="${PREFIX:-$DEF_PREFIX}"
+DHCP_START="${DHCP_START:-$DEF_DHCP_START}"
+DHCP_END="${DHCP_END:-$DEF_DHCP_END}"
 ROUTER="$($DIALOG --stdout --title "Default gateway for PXE clients" --inputbox "Usually the same as the JOG IP on this cable:" 10 60 "${IMAGING_IP}" || true)"
 NEXT_SERVER="$($DIALOG --stdout --title "NEXT SERVER (TFTP/PXE)" --inputbox "Must match siaddr / tftp-server for clients (usually this laptop on USB):" 10 60 "${IMAGING_IP}" || true)"
+ROUTER="${ROUTER:-$IMAGING_IP}"
+NEXT_SERVER="${NEXT_SERVER:-$IMAGING_IP}"
 
-NETMASK="255.255.255.0"
-if [[ "$PREFIX" == "24" ]]; then NETMASK="255.255.255.0"; fi
+if ! NETMASK="$(python3 - "$IMAGING_IP" "$PREFIX" "$DHCP_START" "$DHCP_END" "$ROUTER" "$NEXT_SERVER" 2>&1 <<'PY'
+import ipaddress
+import sys
+
+try:
+    address, prefix, start, end, router, next_server = sys.argv[1:]
+    interface = ipaddress.IPv4Interface(f"{address}/{int(prefix)}")
+    network = interface.network
+    if interface.ip in (network.network_address, network.broadcast_address):
+        raise ValueError("JOG imaging IP must be a usable host address")
+    pool_start = ipaddress.IPv4Address(start)
+    pool_end = ipaddress.IPv4Address(end)
+    gateway = ipaddress.IPv4Address(router)
+    tftp = ipaddress.IPv4Address(next_server)
+    if not 1 <= int(prefix) <= 30:
+        raise ValueError("CIDR prefix must be between 1 and 30")
+    if (pool_start not in network or pool_end not in network or pool_start > pool_end
+            or pool_start in (network.network_address, network.broadcast_address)
+            or pool_end in (network.network_address, network.broadcast_address)):
+        raise ValueError("DHCP pool must be an ascending range inside the imaging subnet")
+    if address in (start, end) or pool_start <= interface.ip <= pool_end:
+        raise ValueError("DHCP pool must not include the JOG imaging IP")
+    if (gateway not in network or tftp not in network
+            or gateway in (network.network_address, network.broadcast_address)
+            or tftp in (network.network_address, network.broadcast_address)):
+        raise ValueError("DHCP router and TFTP server must be usable addresses inside the imaging subnet")
+    if pool_start <= gateway <= pool_end or pool_start <= tftp <= pool_end:
+        raise ValueError("DHCP pool must not include the router or TFTP server")
+    print(network.netmask)
+except (ValueError, ipaddress.AddressValueError) as error:
+    print(f"Invalid imaging network configuration: {error}", file=sys.stderr)
+    sys.exit(1)
+PY
+)"; then
+  die "$NETMASK"
+fi
 
 # --- Cluster (optional) ---
 CLUSTER_MODE="$($DIALOG --stdout --title "Cluster mode" --menu \
