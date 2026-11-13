@@ -30,6 +30,9 @@ done
 if [[ -f "${JOS_DIR:-}/scripts/jos-stage-boot.sh" ]]; then
   # Installed under the old name so existing docs and jog-provision-stack.sh keep working.
   install -m 0755 "${JOS_DIR}/scripts/jos-stage-boot.sh" /usr/local/sbin/jog-stage-jos-boot.sh
+  install -d -m 0755 /usr/local/share/jog/jos
+  if [[ -f "${JOS_DIR}/VERSION" ]]; then install -m 0644 "${JOS_DIR}/VERSION" /usr/local/share/jog/jos/VERSION; fi
+  if [[ -f "${JOS_DIR}/branding/jos-logo.txt" ]]; then install -m 0644 "${JOS_DIR}/branding/jos-logo.txt" /usr/local/share/jog/jos/jos-logo.txt; fi
 else
   echo "jog-install: JOS checkout not found (set JOS_DIR, or clone github.com/splippers/jos next to this repo); skipping JOS boot staging script" >&2
 fi
@@ -39,6 +42,26 @@ install -m 0755 "${ROOT}/scripts/jog-setup-reliable-kiosk.sh" /usr/local/sbin/jo
 install -m 0755 "${ROOT}/scripts/jog-fog-install-once.sh" /usr/local/sbin/jog-fog-install-once.sh
 install -m 0755 "${ROOT}/scripts/jog-force-imaging-nic-up.sh" /usr/local/sbin/jog-force-imaging-nic-up.sh
 install -m 0755 "${ROOT}/scripts/jog-imaging-nic-guard.sh" /usr/local/sbin/jog-imaging-nic-guard.sh
+
+# Corporate pipeline: driver share, multicast profile, provisioning payload.
+install -m 0755 "${ROOT}/scripts/jog-driver-share.sh" /usr/local/sbin/jog-driver-share.sh
+install -m 0755 "${ROOT}/scripts/jog-update-dell-driver-pack.sh" /usr/local/sbin/jog-update-dell-driver-pack.sh
+install -m 0755 "${ROOT}/scripts/jog-multicast-tune.sh" /usr/local/sbin/jog-multicast-tune.sh
+install -m 0755 "${ROOT}/scripts/jog-model-api-setup.sh" /usr/local/sbin/jog-model-api-setup.sh
+install -m 0755 "${ROOT}/scripts/jog-model-api.py" /usr/local/bin/jog-model-api.py
+install -m 0755 "${ROOT}/scripts/jog-autojoin-setup.sh" /usr/local/sbin/jog-autojoin-setup.sh
+install -d -m 0755 /usr/local/share/jog/scripts /usr/local/share/jog/systemd
+install -m 0755 "${ROOT}/scripts/jog-model-api.py" /usr/local/share/jog/scripts/jog-model-api.py
+install -m 0644 "${ROOT}/scripts/jog-autojoin.php" /usr/local/share/jog/scripts/jog-autojoin.php
+install -m 0644 "${ROOT}/systemd/jog-model-api.service" /usr/local/share/jog/systemd/jog-model-api.service
+install -m 0644 "${ROOT}/config/model-api.env.example" /usr/local/share/jog/config/model-api.env.example
+install -m 0755 "${ROOT}/scripts/jog-corporate-setup.sh" /usr/local/sbin/jog-corporate-setup.sh
+install -m 0755 "${ROOT}/scripts/jog-install-provisioner.sh" /usr/local/sbin/jog-install-provisioner.sh
+install -m 0755 "${ROOT}/scripts/jog-post-fog-setup.sh" /usr/local/sbin/jog-post-fog-setup.sh
+install -d -m 0755 /usr/local/share/jog/provisioner/windows /usr/local/share/jog/postdownload /usr/local/share/jog/config
+install -m 0644 "${ROOT}"/provisioner/windows/* /usr/local/share/jog/provisioner/windows/
+install -m 0755 "${ROOT}/install/postdownload/jog-inject-provisioner.sh" /usr/local/share/jog/postdownload/jog-inject-provisioner.sh
+install -m 0644 "${ROOT}/config/jog-provisioning.env.example" /usr/local/share/jog/config/jog-provisioning.env.example
 
 install -m 0644 "${ROOT}/systemd/jog-refresh-status.service" /etc/systemd/system/jog-refresh-status.service
 install -m 0644 "${ROOT}/systemd/jog-refresh-status.timer" /etc/systemd/system/jog-refresh-status.timer

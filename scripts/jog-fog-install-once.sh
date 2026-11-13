@@ -30,3 +30,7 @@ set +a
 touch "$MARK"
 systemctl disable jog-fog-install.service 2>/dev/null || true
 echo "[jog-fog-install-once] native FOG install finished (marker $MARK)."
+
+if [[ -x /usr/local/sbin/jog-post-fog-setup.sh ]]; then
+  /usr/local/sbin/jog-post-fog-setup.sh || echo "[jog-fog-install-once] post-FOG corporate setup warned; re-run: sudo jog-post-fog-setup.sh" >&2
+fi

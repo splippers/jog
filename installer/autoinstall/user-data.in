@@ -28,6 +28,11 @@ autoinstall:
     - git
     - curl
     - openssl
+    - python3
+    - cabextract
+    - samba
+    - smbclient
+    - ethtool
   late-commands:
     - curtin in-target --target=/target -- bash -lc 'git clone https://github.com/splippers/JOG.git /opt/JOG || (cd /opt/JOG && git pull || true)'
     - curtin in-target --target=/target -- install -m 0755 /opt/JOG/installer/jog-install-wizard.sh /usr/local/sbin/jog-install-wizard.sh

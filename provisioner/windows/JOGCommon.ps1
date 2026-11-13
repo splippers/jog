@@ -123,6 +123,16 @@ function ConvertTo-JOGSlug {
     ($Value.ToUpperInvariant() -replace '[^A-Z0-9]+', '-').Trim('-')
 }
 
+# Normalize a vendor model string for manifest and catalog matching.
+function ConvertTo-JOGModelKey {
+    param([string]$Value)
+    if ([string]::IsNullOrWhiteSpace($Value)) { return '' }
+    $v = $Value.ToLowerInvariant()
+    $v = $v -replace '\b(dell|inc\.?|hp|hewlett[- ]packard|lenovo|notebook| laptop| desktop| computer| corporation| company)\b', ' '
+    $v = $v -replace '[^a-z0-9]+', ' '
+    return ($v -replace '\s+', ' ').Trim()
+}
+
 # Convert configured domain-join credentials into a PSCredential, or return null if incomplete.
 function Get-JOGDomainCredential {
     param($Config)

@@ -1,0 +1,307 @@
+<?php
+/**
+ * JOG auto-join endpoint.
+ *
+ * Called by the JOS default PXE entry (jos-taskcheck.sh) after DHCP is up and
+ * before the normal FOG host-key/hostinfo handshake. It does one thing:
+ *
+ *   - if this host already has a task, leave it alone and say OK TASK;
+ *   - if exactly one multicast session is still in its join window, create
+ *     the same multicast task association the "Join Multicast Session" menu
+ *     would create, and say OK JOIN <name>;
+ *   - if none is waiting, say NONE so JOS can fall back to the local disk;
+ *   - if several are waiting, refuse to guess and say AMBIGUOUS <names>.
+ *
+ * This is deliberately MAC-resolved and unauthenticated, like FOG's own
+ * service endpoints. The caller can only act on the host whose MAC it sent,
+ * and the endpoint only creates a task for a session that FOG already says is
+ * joinable. The response is plain text so a shell init script can parse it.
+ *
+ * Installed by jog-autojoin-setup.sh.
+ */
+
+use FOG\Base\FOGCore;
+use FOG\Items\Image;
+use FOG\Items\MulticastSession;
+use FOG\Items\TaskType;
+use FOG\Router\Route;
+
+define('FOG_MACHINE_REQUEST', true);
+
+require '../commons/base.inc.php';
+
+header('Content-Type: text/plain');
+
+/**
+ * Print one machine-readable line and stop.
+ *
+ * @param string $line
+ * @param int    $status HTTP status code
+ *
+ * @return void
+ */
+function jog_autojoin_out($line, $status = 200)
+{
+    http_response_code($status);
+    echo $line . "\n";
+    exit;
+}
+
+/**
+ * Is $ip inside $cidr? IPv4 only; the imaging network is IPv4.
+ *
+ * @param string $ip
+ * @param string $cidr
+ *
+ * @return bool
+ */
+function jog_autojoin_ip_in_cidr($ip, $cidr)
+{
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return false;
+    }
+    list($net, $bits) = array_pad(explode('/', $cidr, 2), 2, null);
+    if (!filter_var($net, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || $bits === null) {
+        return false;
+    }
+    $bits = (int)$bits;
+    if ($bits < 0 || $bits > 32) {
+        return false;
+    }
+    $mask = $bits === 0 ? 0 : (0xFFFFFFFF << (32 - $bits)) & 0xFFFFFFFF;
+    return (ip2long($ip) & $mask) === (ip2long($net) & $mask);
+}
+
+/**
+ * Read the simple KEY=value file used by the appliance. This deliberately
+ * avoids parse_ini_file(): jog.env contains shell comments and quoted UNC
+ * values that are valid for bash but not for PHP's INI parser.
+ *
+ * @param string $file
+ *
+ * @return array
+ */
+function jog_autojoin_read_env($file)
+{
+    $values = [];
+    if (!is_readable($file)) {
+        return $values;
+    }
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') {
+            continue;
+        }
+        $eq = strpos($line, '=');
+        if ($eq === false) {
+            continue;
+        }
+        $key = trim(substr($line, 0, $eq));
+        $value = trim(substr($line, $eq + 1));
+        if (strlen($value) > 1) {
+            $first = $value[0];
+            $last = substr($value, -1);
+            if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                $value = substr($value, 1, -1);
+            }
+        }
+        $values[$key] = $value;
+    }
+    return $values;
+}
+
+/**
+ * Where may the endpoint be called from? The JOS client is on the imaging
+ * subnet; localhost is allowed for the doctor/test. Set
+ * JOG_AUTOJOIN_ALLOW_NET (comma-separated CIDRs) to override.
+ *
+ * @return array
+ */
+function jog_autojoin_allowed_nets()
+{
+    $value = getenv('JOG_AUTOJOIN_ALLOW_NET');
+    if ($value === false || trim($value) === '') {
+        $env = jog_autojoin_read_env('/etc/jog/autojoin.env');
+        if (empty($env['JOG_AUTOJOIN_ALLOW_NET'])) {
+            $jogEnv = jog_autojoin_read_env('/etc/jog/jog.env');
+            $env = array_merge($jogEnv, $env);
+        }
+        $value = isset($env['JOG_AUTOJOIN_ALLOW_NET'])
+            ? $env['JOG_AUTOJOIN_ALLOW_NET']
+            : '';
+        if (trim($value) === '' && !empty($env['JOG_IMAGING_IP'])) {
+            $prefix = isset($env['JOG_IMAGING_PREFIX'])
+                ? (int)$env['JOG_IMAGING_PREFIX']
+                : 24;
+            $octets = explode('.', $env['JOG_IMAGING_IP']);
+            if (count($octets) === 4) {
+                $octets[3] = '0';
+                $value = implode('.', $octets) . '/' . $prefix;
+            }
+        }
+        if (trim($value) === '') {
+            $value = '10.99.0.0/24';
+        }
+    }
+    return array_values(array_filter(array_map('trim', explode(',', $value))));
+}
+
+$remote = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+$allowed = ($remote === '127.0.0.1' || $remote === '::1');
+foreach (jog_autojoin_allowed_nets() as $cidr) {
+    if (jog_autojoin_ip_in_cidr($remote, $cidr)) {
+        $allowed = true;
+        break;
+    }
+}
+if (!$allowed) {
+    jog_autojoin_out('ERROR forbidden', 403);
+}
+
+try {
+    // boot.php collects every mac* field; do the same so a host registered
+    // under a NIC other than the one that booted can still be found.
+    $macFields = [
+        'mac',
+        'mac0',
+        'macboot',
+        'mac1',
+        'mac2',
+        'mac3',
+        'mac4',
+        'mac5',
+        'mac6',
+        'mac7',
+    ];
+    $macLists = [];
+    foreach ($macFields as $macField) {
+        $macLists[] = explode('|', (string)filter_input(INPUT_POST, $macField));
+    }
+    $mac = FOGCore::fastmerge(...$macLists);
+    $mac = implode(
+        '|',
+        array_values(
+            array_unique(
+                array_filter($mac)
+            )
+        )
+    );
+    if ($mac === '') {
+        jog_autojoin_out('ERROR no MAC supplied', 400);
+    }
+
+    FOGCore::getHostItem(false, false, true, false, false, $mac);
+    $Host = FOGCore::$Host;
+    if (!$Host->isValid()) {
+        jog_autojoin_out('ERROR host not registered', 400);
+    }
+    if ($Host->get('pending')) {
+        jog_autojoin_out('ERROR host is pending registration', 400);
+    }
+
+    // A task may already be queued by the web UI or by an earlier boot. Do
+    // not create a second one; JOS will continue into the normal handshake.
+    $Task = $Host->get('task');
+    if ($Task->isValid()) {
+        jog_autojoin_out('OK TASK ' . $Task->get('name'));
+    }
+
+    // Only sessions FOG itself would allow a client to join. This is the same
+    // state/name/size/join-window test as IpxeBootMenu::sesscheck().
+    $findWhere = [
+        'stateID' => FOGCore::fastmerge(
+            FOGCore::getQueuedStates(),
+            (array)FOGCore::getProgressState()
+        ),
+    ];
+    // A session belongs to a storage group. FOG's own session-join lookup
+    // matches on both name and group, so a session from another group would
+    // create a second session rather than joining this one. Prefer sessions
+    // in the host image's group; if the host has no usable image, keep the
+    // old no-filter behaviour.
+    $hostGroupID = 0;
+    try {
+        $hostImage = $Host->getImage();
+        if ($hostImage instanceof Image) {
+            $storageGroup = $hostImage->getStorageGroup();
+            if ($storageGroup && $storageGroup->isValid()) {
+                $hostGroupID = (int)$storageGroup->get('id');
+            }
+        }
+    } catch (\Exception $e) {
+        $hostGroupID = 0;
+    }
+
+    $sessions = Route::getList('multicastsession', $findWhere);
+    $joinable = [];
+    foreach ($sessions as $row) {
+        // Route::getList() returns plain rows. Rehydrate the item so
+        // isJoinable() uses the same sender-window logic as FOG's own
+        // "Join Multicast Session" path.
+        $session = new MulticastSession((int)$row->id);
+        if (!$session->isValid()) {
+            continue;
+        }
+        if (trim((string)$session->get('name')) === '') {
+            continue;
+        }
+        if ((int)$session->get('sessclients') < 1) {
+            continue;
+        }
+        if ($hostGroupID > 0 && (int)$session->get('storagegroupID') !== $hostGroupID) {
+            continue;
+        }
+        if (!$session->isJoinable()) {
+            continue;
+        }
+        $joinable[] = $session;
+    }
+
+    if (count($joinable) === 0) {
+        jog_autojoin_out('NONE');
+    }
+
+    // Several named sessions waiting is a human decision. Do not pick one.
+    $names = [];
+    foreach ($joinable as $session) {
+        $names[] = $session->get('name');
+    }
+    $names = array_values(array_unique($names));
+    if (count($names) > 1) {
+        jog_autojoin_out('AMBIGUOUS ' . implode(',', $names));
+    }
+
+    $session = $joinable[0];
+
+    // Match IpxeBootMenu::multijoin(): point the host at the session image
+    // before creating the association so task creation and hostinfo agree.
+    $msImage = $session->getImage()->get('id');
+    $hostImage = $Host->getImage();
+    if (!($hostImage instanceof Image) || $hostImage->get('id') != $msImage) {
+        $Host
+            ->set('imagename', $session->getImage())
+            ->set('imageID', $msImage);
+    }
+
+    $tasktype = Route::getItem('tasktype', TaskType::MULTICAST);
+    if (!$tasktype) {
+        jog_autojoin_out('ERROR multicast task type missing', 500);
+    }
+
+    $Host->createImagePackage(
+        $tasktype,
+        $session->get('name'),
+        false,
+        false,
+        -1,
+        false,
+        'jog-autojoin',
+        '',
+        true,
+        false
+    );
+
+    jog_autojoin_out('OK JOIN ' . $session->get('name'));
+} catch (\Exception $e) {
+    jog_autojoin_out('ERROR ' . $e->getMessage(), 400);
+}

@@ -166,13 +166,22 @@ function Invoke-JOGStageScript {
 # Load the checkpoint and ensure every known stage has an explicit initial status.
 
 $state = Read-JOGState
-$stageNames = @('INITIALISE','DRIVERS','HOSTNAME','DOMAIN_JOIN','HYBRID_JOIN','GROUPS','BITLOCKER','ESCROW','CLEANUP')
+$provisioningMode = [string](Get-JOGProperty $config 'ProvisioningMode' 'AirGapped')
+if ($provisioningMode -notin @('AirGapped', 'Connected')) {
+    Write-JOGLog "ProvisioningMode must be AirGapped or Connected, not '$provisioningMode'." -Level ERROR
+    exit 1
+}
+$stageNames = @('INITIALISE','DRIVERS','HOSTNAME','HANDOFF','DOMAIN_JOIN','HYBRID_JOIN','GROUPS','BITLOCKER','ESCROW','CLEANUP')
 foreach ($name in $stageNames) {
     if (-not $state.Stages.ContainsKey($name)) { $state.Stages[$name] = 'pending' }
 }
 
 if ($state.State -eq 'COMPLETE' -and -not $Force) {
     Write-JOGLog "Provisioning already COMPLETE. Use -Force to re-run." -Level INFO
+    exit 0
+}
+if ($state.State -eq 'AWAITING_CORPORATE' -and $provisioningMode -eq 'AirGapped' -and -not $Force) {
+    Write-JOGLog "Device is AWAITING_CORPORATE. Connect it to Corporate and run Resume-JOGCorporateEnrollment.ps1." -Level INFO
     exit 0
 }
 if ($state.State -eq 'FAILED' -and -not $Force) {
@@ -185,6 +194,7 @@ $rebootBetween = [bool](Get-JOGProperty $config 'RebootBetweenStages' $true)
 $completedState = @{
     DRIVERS      = 'DRIVERS_INSTALLED'
     HOSTNAME     = 'HOSTNAME_ASSIGNED'
+    HANDOFF      = 'AWAITING_CORPORATE'
     DOMAIN_JOIN  = 'DIRECTORY_JOINED'
     HYBRID_JOIN  = 'HYBRID_JOINED'
     GROUPS       = 'GROUPS_ASSIGNED'
@@ -215,6 +225,21 @@ if ($state.Stages['INITIALISE'] -ne 'done' -or $Force) {
     Write-JOGLog "Stage INITIALISE done"
 }
 
+# The air-gapped handoff unregisters the startup task. When the resume script
+# switches the config to Connected, INITIALISE is already done, so make sure
+# the task exists before any corporate stage can request a reboot.
+if (-not $NoResumeTask -and $state.Stages['INITIALISE'] -eq 'done') {
+    if (-not (Get-ScheduledTask -TaskName 'JOGProvisioning' -ErrorAction SilentlyContinue)) {
+        try {
+            Register-JOGResumeTask
+            Write-JOGLog "Re-registered scheduled task JOGProvisioning for the corporate resume"
+        } catch {
+            Write-JOGLog "Could not register JOGProvisioning task: $($_.Exception.Message)" -Level ERROR
+            exit 1
+        }
+    }
+}
+
 # Map each state-machine stage to the script and parameters that implement it.
 
 $stageActions = [ordered]@{
@@ -228,6 +253,13 @@ $stageActions = [ordered]@{
         Invoke-JOGStageScript 'Set-JOGHostname.ps1' @{
             Config  = $config
             LogFile = $script:JOGLogFile
+        }
+    }
+    HANDOFF = {
+        Invoke-JOGStageScript 'Write-JOGHandoff.ps1' @{
+            Config     = $config
+            LogFile    = $script:JOGLogFile
+            ConfigPath = $ConfigPath
         }
     }
     DOMAIN_JOIN = {
@@ -267,8 +299,19 @@ $stageActions = [ordered]@{
     }
 }
 
+# Air-gapped devices stop after hostname and driver installation. The
+# corporate-only stages are deferred until Resume-JOGCorporateEnrollment.ps1
+# switches the config to Connected on the corporate network.
+$stageOrder = @('DRIVERS', 'HOSTNAME')
+if ($provisioningMode -eq 'AirGapped') {
+    $stageOrder += 'HANDOFF'
+} else {
+    $stageOrder += @('DOMAIN_JOIN', 'HYBRID_JOIN', 'GROUPS', 'BITLOCKER', 'ESCROW')
+}
+Write-JOGLog "Provisioning mode: $provisioningMode; stages: $($stageOrder -join ', ')"
+
 # Skip completed work, save stage boundaries, and stop with a resumable state on failure.
-foreach ($stage in $stageActions.Keys) {
+foreach ($stage in $stageOrder) {
     if ($state.Stages[$stage] -eq 'done' -and -not $Force) {
         Write-JOGLog "Stage $stage already done; skipping"
         continue
@@ -308,6 +351,15 @@ foreach ($stage in $stageActions.Keys) {
     if ($result.RebootRequired -and $rebootBetween) {
         Restart-JOGComputer -Reason "stage $stage requested a reboot"
     }
+}
+
+# Air-gapped handoff leaves the device ready for corporate enrollment. Do not
+# run the corporate cleanup or remove the config yet: the resume phase needs
+# the BitLocker/domain settings (but not the passwords, which HANDOFF blanks).
+if ($provisioningMode -eq 'AirGapped') {
+    if (-not $NoResumeTask) { Unregister-JOGResumeTask }
+    Write-JOGLog "Provisioning is AWAITING_CORPORATE. No corporate join, hybrid join, or BitLocker stage has run."
+    exit 0
 }
 
 # Remove reusable credentials from config, mark completion, and retire temporary state.

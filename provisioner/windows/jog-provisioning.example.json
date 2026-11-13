@@ -1,0 +1,50 @@
+{
+  "Version": 1,
+  "Site": "SITE01",
+  "Organization": "Example Corporation",
+  "DeviceNamePattern": "LT-{Site}-{Serial}",
+  "ProvisioningMode": "AirGapped",
+  "Domain": "corp.example.com",
+  "DomainNetbios": "CORP",
+  "DomainJoin": {
+    "Mode": "Credential",
+    "BlobPath": "C:\\ProgramData\\JOG\\domainjoin.blob",
+    "User": "",
+    "Password": "",
+    "OUPath": "OU=Workstations,OU=JOG,DC=corp,DC=example,DC=com"
+  },
+  "HybridJoin": {
+    "Enabled": true,
+    "TimeoutMinutes": 30
+  },
+  "Groups": [
+    "JOG-Workstations",
+    "EndpointProtection",
+    "DeviceEncryption"
+  ],
+  "GroupsMode": "Device",
+  "BitLocker": {
+    "Enabled": true,
+    "Mode": "TpmOnly",
+    "PinLength": 6,
+    "Escrow": "AD",
+    "PinStorage": "None",
+    "AllowAdPinStorage": false,
+    "AdPinAttribute": "extensionAttribute15"
+  },
+  "DriverShare": {
+    "Unc": "\\\\10.99.0.1\\Drivers",
+    "ReadUser": "drivers",
+    "ReadPassword": "CHANGE_ME",
+    "ModelMap": {
+      "Latitude 3440": "Latitude-3440"
+    },
+    "Fallback": "Default",
+    "BasePacks": ["VMD"],
+    "Manifest": "manifest.json"
+  },
+  "RebootBetweenStages": true,
+  "DeleteConfigOnComplete": true,
+  "ShutdownOnComplete": false,
+  "MaxAttempts": 5
+}
