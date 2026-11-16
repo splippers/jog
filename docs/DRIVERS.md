@@ -230,6 +230,11 @@ deploy-tested on a factory-RAID machine.
 
 ## Permissions
 
+> On this appliance the live share is on the separate `/images` volume at
+> `/images/Drivers`; `/etc/jog/jog.env` sets `JOG_DRIVER_SHARE_PATH` to that path.
+> `/opt/thepermanentway/refmaterial/Drivers` is kept as a compatibility symlink.
+> Keep the share off the root LV: full vendor packs can exceed 15 GB.
+
 - Share path: `/srv/jog/drivers`, mode 2775, owner `jogshare:jogdrivers`.
 - `force user = jogshare`, `force group = jogdrivers`, `create mask = 0664`, `directory mask = 2775`.
 - `write list = @jogdriveradmin`; `read only = yes` for everyone else.
