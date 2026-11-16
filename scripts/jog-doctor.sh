@@ -130,6 +130,12 @@ if db_query "SELECT 1;" >/dev/null 2>&1; then
   else corp_bad "multicast join wait is ${maxwait:-unknown}m (target 3m)"; fi
   if [[ -n "$rendezvous" ]]; then ok "multicast rendezvous: $rendezvous"
   else corp_bad "multicast rendezvous is empty (run jog-multicast-tune.sh --apply)"; fi
+  null_sessions="$(db_query "SELECT COUNT(*) FROM multicastSessions WHERE msState IS NULL;")"
+  if [[ "${null_sessions:-0}" -gt 0 ]] 2>/dev/null; then
+    corp_bad "$null_sessions multicast session(s) have msState=NULL and will never start (requeue or delete them)"
+  else
+    ok "no stateless multicast sessions"
+  fi
 else
   echo "  warn  cannot read the FOG database (run as root, or FOG is not installed)"
 fi
