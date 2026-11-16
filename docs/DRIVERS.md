@@ -119,6 +119,39 @@ Useful switches:
 
 The script logs to `%ProgramData%\JOG\logs\fog-driver-sync-*.log`.
 
+## Run the sync on the appliance
+
+`jog-sync-driver-packs.sh` does the catalog work on the appliance itself, so no Windows workstation
+has to be online. It reads the FOG model inventory, downloads the newest Dell/HP Windows 11 x64 pack
+for each model (falling back to Windows 10 when the vendor has no Windows 11 pack), verifies the
+vendor SHA256 and size, extracts the pack, prunes it to the INF trees `pnputil` needs, and publishes
+it to the `[Drivers]` share.
+
+```bash
+# Resolve the models and packs without downloading
+sudo jog-sync-driver-packs.sh --plan-only
+
+# Download, extract, prune, publish, and update manifest.json
+sudo jog-sync-driver-packs.sh
+
+# Limit the run
+sudo jog-sync-driver-packs.sh --model 'Latitude 3440'
+sudo jog-sync-driver-packs.sh --vendor Dell
+
+# Keep the vendor .exe/.cab instead of publishing an INF tree
+sudo jog-sync-driver-packs.sh --mode vendor
+```
+
+The default output is `<share>/<MODEL-SLUG>` (for example `LATITUDE-3440`) with a `pack.json` and a
+merged `manifest.json` at the share root. Vendor downloads are removed after a successful publish;
+pass `--keep-downloads` to retain them under `/tmp/opencode/jog-driver-sync/downloads`. The script
+uses `cabextract` first and `7z`/`unzip` as fallbacks; install `p7zip-full` if a pack is a 7z or
+InstallShield self-extractor.
+
+`--mode vendor` is useful when the client-side installer will extract the pack itself. The normal
+provisioner (`Install-JOGDrivers.ps1`) requires INF files, so keep the default `extract` mode for the
+corporate pipeline.
+
 ## How the device uses the share
 
 `Install-JOGDrivers.ps1`:

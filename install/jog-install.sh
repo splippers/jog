@@ -46,6 +46,8 @@ install -m 0755 "${ROOT}/scripts/jog-imaging-nic-guard.sh" /usr/local/sbin/jog-i
 # Corporate pipeline: driver share, multicast profile, provisioning payload.
 install -m 0755 "${ROOT}/scripts/jog-driver-share.sh" /usr/local/sbin/jog-driver-share.sh
 install -m 0755 "${ROOT}/scripts/jog-update-dell-driver-pack.sh" /usr/local/sbin/jog-update-dell-driver-pack.sh
+install -m 0755 "${ROOT}/scripts/jog-sync-driver-packs.sh" /usr/local/sbin/jog-sync-driver-packs.sh
+install -m 0755 "${ROOT}/scripts/jog-sync-driver-packs.py" /usr/local/sbin/jog-sync-driver-packs.py
 install -m 0755 "${ROOT}/scripts/jog-multicast-tune.sh" /usr/local/sbin/jog-multicast-tune.sh
 install -m 0755 "${ROOT}/scripts/jog-model-api-setup.sh" /usr/local/sbin/jog-model-api-setup.sh
 install -m 0755 "${ROOT}/scripts/jog-model-api.py" /usr/local/bin/jog-model-api.py
