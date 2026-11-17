@@ -82,6 +82,11 @@ sudo jog-corporate-setup.sh
 It writes `/etc/jog/provisioning.env` (0600) and, if enabled, runs the payload installer. The fields are
 documented in [`config/jog-provisioning.env.example`](../config/jog-provisioning.env.example).
 
+The non-interactive defaults use `corp.example.com`, `OU=Workstations,OU=JOG,DC=corp,DC=example,DC=com`,
+and the example group list. Replace those with the real AD values before a device resumes enrollment;
+the air-gapped handoff uses the domain and OU from this config. Re-run
+`sudo jog-install-provisioner.sh` after editing so newly imaged devices receive the updated payload.
+
 Key choices:
 
 | Choice | Recommended | Why |

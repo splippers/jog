@@ -40,11 +40,19 @@
     With -OS Windows11, publish the latest Windows 10 pack when no Windows 11
     pack exists. Default true; the HP EliteBook 735 G6 is such a model.
 
+.PARAMETER Minimal
+    Drop the large video/audio category trees and Linux .so files before
+    publishing. This keeps storage, chipset, network, input, security, and dock
+    drivers. Display and audio drivers can be supplied by Windows Update.
+
 .EXAMPLE
     .\Sync-FOGDriverPacks.ps1 -ApiTokenFile C:\ProgramData\JOG\model-api.token -WhatIf
 
 .EXAMPLE
     .\Sync-FOGDriverPacks.ps1 -Model 'Latitude 3440','HP EliteBook 735 G6' -Force
+
+.EXAMPLE
+    .\Sync-FOGDriverPacks.ps1 -Minimal
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
@@ -64,6 +72,7 @@ param(
     [switch]$NoUpload,
     [switch]$KeepDownloads,
     [switch]$Force,
+    [switch]$Minimal,
     [switch]$PlanOnly
 )
 
@@ -241,6 +250,36 @@ function Expand-JOGDriverPack {
         throw "No .inf files found after extracting $File"
     }
     return $infs.Count
+}
+
+function Remove-JOGMinimalNoise {
+    param([string]$Root)
+    $rootItem = Get-Item -LiteralPath $Root
+    $removed = 0
+    $items = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -ErrorAction SilentlyContinue |
+        Sort-Object { $_.FullName.Length })
+    foreach ($item in $items) {
+        if (-not (Test-Path -LiteralPath $item.FullName)) { continue }
+        $relative = $item.FullName.Substring($rootItem.FullName.Length).TrimStart('\')
+        $depth = @($relative -split '[\\/]' | Where-Object { $_ }).Count
+        if ($item.PSIsContainer -and $item.Name -in @('video', 'audio') -and $depth -le 4) {
+            Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            $removed++
+        } elseif (-not $item.PSIsContainer -and $item.Extension -ieq '.so') {
+            Remove-Item -LiteralPath $item.FullName -Force -ErrorAction SilentlyContinue
+            $removed++
+        }
+    }
+    $dirs = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -Directory -ErrorAction SilentlyContinue |
+        Sort-Object { $_.FullName.Length } -Descending)
+    foreach ($dir in $dirs) {
+        if (-not (Test-Path -LiteralPath $dir.FullName)) { continue }
+        $children = @(Get-ChildItem -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue)
+        if ($children.Count -eq 0) {
+            Remove-Item -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue
+        }
+    }
+    return $removed
 }
 
 function Get-JOGDellPacks {
@@ -520,6 +559,10 @@ try {
             if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
             New-Item -ItemType Directory -Force -Path $staging | Out-Null
             Copy-Item -Path (Join-Path $cache.Extract '*') -Destination $staging -Recurse -Force
+            if ($Minimal) {
+                $removed = Remove-JOGMinimalNoise -Root $staging
+                Write-JOGLog "Minimal profile: removed $removed video/audio/.so item(s) from $folder"
+            }
 
             $packInfo = Get-JOGManifestEntry -FogModel $m -Pack $pack -Folder $folder
             $packInfo | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $staging 'pack.json') -Encoding UTF8

@@ -7,11 +7,19 @@ and publishes directly into the Samba [Drivers] share.
 
   sudo jog-sync-driver-packs.py --plan-only
   sudo jog-sync-driver-packs.py
+  sudo jog-sync-driver-packs.py --minimal      # drop video/audio/.so
+  sudo jog-sync-driver-packs.py --slim-existing --plan-only
+  sudo jog-sync-driver-packs.py --slim-existing
   sudo jog-sync-driver-packs.py --mode vendor   # keep the vendor .exe/.cab
 
 By default the vendor pack is downloaded, verified, extracted, pruned to the
 INF trees pnputil needs, and published as <share>/<MODEL-SLUG>.  The vendor
 download is deleted after a successful publish unless --keep-downloads is set.
+
+The --minimal profile removes the large video/audio trees and Linux .so files
+before publishing.  --slim-existing applies the same profile to packs that are
+already on the share; use --plan-only for a dry run.  The VMD base pack,
+storage, chipset, network, input, security, and dock drivers are retained.
 """
 from __future__ import annotations
 
@@ -406,7 +414,7 @@ def select_pack(model: dict, packs: list[dict], os_target: str, allow_fallback: 
 
 
 def inf_count(root: Path) -> int:
-    return sum(1 for _ in root.rglob("*.inf"))
+    return sum(1 for path in root.rglob("*.inf") if path.is_file())
 
 
 def prune_to_inf_trees(root: Path) -> int:
@@ -416,7 +424,7 @@ def prune_to_inf_trees(root: Path) -> int:
     and HTML documentation; dropping those keeps the share small enough for the
     appliance's root filesystem.
     """
-    infs = list(root.rglob("*.inf"))
+    infs = [path for path in root.rglob("*.inf") if path.is_file()]
     if not infs:
         return 0
     keep_dirs: set[Path] = set()
@@ -435,6 +443,142 @@ def prune_to_inf_trees(root: Path) -> int:
         elif path.parent not in keep_dirs:
             path.unlink(missing_ok=True)
     return inf_count(root)
+
+
+def tree_size(root: Path) -> int:
+    total = 0
+    for path in root.rglob("*"):
+        try:
+            if path.is_file():
+                total += path.stat().st_size
+        except OSError:
+            pass
+    return total
+
+
+def format_bytes(value: int) -> str:
+    size = float(value)
+    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if size < 1024 or unit == "TiB":
+            if unit == "B":
+                return f"{int(size)} B"
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{value} B"
+
+
+def prune_minimal_noise(root: Path, *, max_depth: int = 4) -> int:
+    """Drop the large video/audio trees and Linux .so files from a pack.
+
+    The corporate fleet needs storage, chipset, network, input, security, and
+    dock drivers. Display and audio drivers are large and Windows Update can
+    supply them. Only remove the shallow category folders so a nested audio
+    driver inside a graphics package is not removed by accident.
+    """
+    for path in sorted(root.rglob("*"), key=lambda item: len(item.parts)):
+        if not path.exists():
+            continue
+        try:
+            relative_depth = len(path.relative_to(root).parts)
+        except ValueError:
+            continue
+        if path.is_dir() and path.name.lower() in {"video", "audio"} and relative_depth <= max_depth:
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file() and path.suffix.lower() == ".so":
+            path.unlink(missing_ok=True)
+
+    # Remove directories left empty by the deletions.
+    for path in sorted(root.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+        if path.is_dir() and path.exists():
+            try:
+                next(path.iterdir())
+            except StopIteration:
+                path.rmdir()
+            except OSError:
+                pass
+    return inf_count(root)
+
+
+def slim_share(share: Path, *, dry_run: bool) -> int:
+    """Remove the large video/audio trees from already-published model packs."""
+    manifest_path = share / "manifest.json"
+    folders: list[Path] = []
+    if manifest_path.is_file():
+        try:
+            document = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for entry in document.get("models", []):
+                folder = str(entry.get("folder", "")).strip()
+                if not folder:
+                    continue
+                candidate = share / folder
+                if candidate.is_dir():
+                    folders.append(candidate)
+        except (OSError, ValueError) as exc:
+            warn(f"cannot read {manifest_path}: {exc}")
+    if not folders:
+        folders = sorted(
+            path
+            for path in share.iterdir()
+            if path.is_dir() and (path / "pack.json").is_file()
+        )
+    if not folders:
+        die(f"no model pack folders found under {share}")
+
+    log(f"slim profile: {len(folders)} model pack(s) under {share}")
+    total_before = 0
+    total_after = 0
+    for folder in folders:
+        before_size = tree_size(folder)
+        before_infs = inf_count(folder)
+        candidates: list[Path] = []
+        for path in sorted(folder.rglob("*"), key=lambda item: len(item.parts)):
+            if not path.exists():
+                continue
+            try:
+                relative_depth = len(path.relative_to(folder).parts)
+            except ValueError:
+                continue
+            if path.is_dir() and path.name.lower() in {"video", "audio"} and relative_depth <= 4:
+                candidates.append(path)
+            elif path.is_file() and path.suffix.lower() == ".so":
+                candidates.append(path)
+        log(
+            f"  {folder.name}: {format_bytes(before_size)}, {before_infs} INF, "
+            f"{len(candidates)} video/audio/.so item(s) to remove"
+        )
+        if not dry_run:
+            for path in candidates:
+                if not path.exists():
+                    continue
+                if path.is_dir():
+                    shutil.rmtree(path, ignore_errors=True)
+                else:
+                    path.unlink(missing_ok=True)
+            for path in sorted(folder.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+                if path.is_dir() and path.exists():
+                    try:
+                        next(path.iterdir())
+                    except StopIteration:
+                        path.rmdir()
+                    except OSError:
+                        pass
+        after_size = tree_size(folder)
+        after_infs = inf_count(folder)
+        total_before += before_size
+        total_after += after_size
+        if not dry_run:
+            log(f"    -> {format_bytes(after_size)}, {after_infs} INF")
+    if dry_run:
+        log(
+            f"dry run: current total {format_bytes(total_before)} across "
+            f"{len(folders)} pack(s); no files changed"
+        )
+    else:
+        log(
+            f"reduced {format_bytes(total_before)} -> {format_bytes(total_after)} "
+            f"across {len(folders)} pack(s)"
+        )
+    return 0
 
 
 def try_extract(command: list[str]) -> bool:
@@ -551,19 +695,27 @@ def main() -> int:
     parser.add_argument("--os", choices=["Windows11", "Windows10", "Auto"], default=DEFAULT_OS)
     parser.add_argument("--no-fallback", action="store_true", help="do not use Windows 10 when Windows 11 is unavailable")
     parser.add_argument("--mode", choices=["extract", "vendor"], default="extract", help="publish INF trees or vendor packs")
-    parser.add_argument("--plan-only", action="store_true", help="resolve and print the plan only")
+    parser.add_argument("--plan-only", action="store_true", help="resolve and print the plan only; with --slim-existing, a dry run")
     parser.add_argument("--keep-downloads", action="store_true", help="keep vendor downloads after publishing")
     parser.add_argument("--force", action="store_true", help="re-download even when the cache has the pack")
     parser.add_argument("--no-prune", action="store_true", help="keep non-INF vendor files")
+    parser.add_argument("--minimal", action="store_true", help="drop large video/audio trees and Linux .so files")
+    parser.add_argument("--slim-existing", action="store_true", help="slim already-published model packs; no download")
     args = parser.parse_args()
-
-    for command in ("curl", "cabextract", "sha256sum"):
-        if not shutil.which(command):
-            die(f"required command not found: {command}")
 
     share = resolve_share(args.share)
     if not share.is_dir():
         die(f"driver share does not exist: {share}")
+
+    if args.slim_existing:
+        return slim_share(share, dry_run=args.plan_only)
+
+    if args.minimal and args.mode == "vendor":
+        warn("--minimal has no effect in --mode vendor; use extract mode")
+
+    for command in ("curl", "cabextract", "sha256sum"):
+        if not shutil.which(command):
+            die(f"required command not found: {command}")
 
     work = Path(args.work_dir)
     work.mkdir(parents=True, exist_ok=True)
@@ -676,6 +828,9 @@ def main() -> int:
                 raise RuntimeError(f"no .inf files after extracting {download_path.name}")
             if not args.no_prune:
                 count = prune_to_inf_trees(staging)
+            if args.minimal:
+                count = prune_minimal_noise(staging)
+                log(f"minimal profile: {count} INF file(s) after dropping video/audio/.so")
             log(f"extracted {count} INF file(s) for {slug}")
             publish(staging, target, entry, "jon")
             published.append(entry)

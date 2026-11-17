@@ -88,6 +88,9 @@ Run this on a Windows 11 workstation that can reach both the appliance and the v
 .\Sync-FOGDriverPacks.ps1 -Model 'Latitude 3440'
 .\Sync-FOGDriverPacks.ps1 -Vendor Dell
 
+# Drop the large video/audio trees (recommended for the corporate fleet)
+.\Sync-FOGDriverPacks.ps1 -Minimal
+
 # Use the imaging-network address if the workstation routes to 10.99.0.0/24
 .\Sync-FOGDriverPacks.ps1 -ApiUrl http://10.99.0.1:8089/api/models `
   -Destination \\10.99.0.1\Drivers
@@ -102,8 +105,9 @@ What the script does:
    has no Windows 11 pack; the HP EliteBook 735 G6 is such a model.
 4. Verifies the catalog SHA256, downloads the vendor `.exe`, extracts it with `expand.exe`, and checks that
    the tree contains `.inf` files.
-5. Mirrors the extracted tree to `\\192.168.254.1\Drivers\<MODEL-SLUG>` as `driveradmin`.
-6. Merges the new entries into `manifest.json`.
+5. With `-Minimal`, drops the large `video`/`audio` category trees and Linux `.so` files.
+6. Mirrors the extracted tree to `\\192.168.254.1\Drivers\<MODEL-SLUG>` as `driveradmin`.
+7. Merges the new entries into `manifest.json`.
 
 Useful switches:
 
@@ -113,6 +117,7 @@ Useful switches:
 | `-NoUpload` | Download and extract, leave the tree in `-WorkDir` |
 | `-Force` | Re-download even when the cache has the pack |
 | `-KeepDownloads` | Keep the multi-gigabyte vendor downloads for diagnosis |
+| `-Minimal` | Drop the large `video`/`audio` trees and Linux `.so` files |
 | `-WorkDir` | Cache/catalog/extract directory; default `%ProgramData%\JOG\driver-sync` |
 | `-OS` | `Windows11` (default), `Windows10`, or `Auto` |
 | `-Vendor` | `All`, `Dell`, `HP`, or `Lenovo` |
@@ -138,6 +143,13 @@ sudo jog-sync-driver-packs.sh
 sudo jog-sync-driver-packs.sh --model 'Latitude 3440'
 sudo jog-sync-driver-packs.sh --vendor Dell
 
+# Drop the large video/audio trees and Linux .so files while publishing
+sudo jog-sync-driver-packs.sh --minimal
+
+# Slim packs that are already on the share (dry run first)
+sudo jog-sync-driver-packs.sh --slim-existing --plan-only
+sudo jog-sync-driver-packs.sh --slim-existing
+
 # Keep the vendor .exe/.cab instead of publishing an INF tree
 sudo jog-sync-driver-packs.sh --mode vendor
 ```
@@ -151,6 +163,30 @@ InstallShield self-extractor.
 `--mode vendor` is useful when the client-side installer will extract the pack itself. The normal
 provisioner (`Install-JOGDrivers.ps1`) requires INF files, so keep the default `extract` mode for the
 corporate pipeline.
+
+## Minimal pack profile
+
+The corporate fleet needs storage, chipset, network, input, security, dock, and vendor-system drivers.
+It does not need the multi-gigabyte display and audio packages: Windows Update supplies those, and they
+are the largest part of a vendor pack. The minimal profile removes shallow `video` and `audio` category
+folders and Linux `.so` files, while keeping the VMD base pack and all other INF trees.
+
+The live share is already slimmed. The full trees were kept as a hardlink backup at
+`/images/.drivers-full-20261117`; remove that directory once a deployment test passes. The manifest is
+unchanged: every model entry still points at its folder, and each folder still has `pack.json` and at
+least one INF.
+
+| Pack | Before | After | INFs kept |
+|---|---:|---:|---:|
+| HP EliteBook 735 G6 | 315 MiB | 184 MiB | 85 |
+| Latitude 3410 | 2.9 GiB | 387 MiB | 145 |
+| Latitude 3440 | 11.2 GiB | 291 MiB | 173 |
+| Latitude 3450 | 7.0 GiB | 344 MiB | 198 |
+| **Model total** | **21.4 GiB** | **1.2 GiB** | |
+
+Use `--minimal` for future appliance syncs and `--slim-existing` for an existing share.
+`--slim-existing --plan-only` is a dry run. The PowerShell sync has the equivalent `-Minimal` switch;
+the appliance-side script is still the primary path because it also prunes non-INF vendor files.
 
 ## How the device uses the share
 

@@ -56,7 +56,11 @@ fi
 
 SITE="${JOG_SITE_CODE:-SITE01}"
 ORG="${JOG_ORG_NAME:-Example Corporation}"
-PATTERN="${JOG_DEVICE_NAME_PATTERN:-LT-{Site}-{Serial}}"
+if [[ -n "${JOG_DEVICE_NAME_PATTERN:-}" ]]; then
+  PATTERN="$JOG_DEVICE_NAME_PATTERN"
+else
+  PATTERN='LT-{Site}-{Serial}'
+fi
 DOMAIN="${JOG_DOMAIN:-corp.example.com}"
 NETBIOS="${JOG_DOMAIN_NETBIOS:-CORP}"
 JOIN_MODE="${JOG_DOMAIN_JOIN_MODE:-Credential}"
@@ -66,7 +70,7 @@ JOIN_PASS="${JOG_DOMAIN_JOIN_PASSWORD:-}"
 BLOB="${JOG_DOMAIN_JOIN_BLOB:-}"
 HYBRID="${JOG_HYBRID_JOIN:-1}"
 HYBRID_TIMEOUT="${JOG_HYBRID_JOIN_TIMEOUT_MIN:-30}"
-GROUPS="${JOG_AD_GROUPS:-JOG-Workstations,EndpointProtection,DeviceEncryption}"
+AD_GROUPS="${JOG_AD_GROUPS:-JOG-Workstations,EndpointProtection,DeviceEncryption}"
 GROUPS_MODE="${JOG_GROUPS_MODE:-Device}"
 BL_ENABLED="${JOG_BITLOCKER_ENABLED:-1}"
 BL_MODE="${JOG_BITLOCKER_MODE:-TpmOnly}"
@@ -150,7 +154,7 @@ if [[ "$MODE" == "interactive" ]]; then
   fi
   if ask_yesno 'Enable Entra hybrid join?' "$([[ "$HYBRID" == "1" ]] && echo y || echo n)"; then HYBRID=1; else HYBRID=0; fi
   HYBRID_TIMEOUT="$(ask 'Hybrid-join timeout (minutes)' "$HYBRID_TIMEOUT")"
-  GROUPS="$(ask 'AD groups (comma-separated)' "$GROUPS")"
+  AD_GROUPS="$(ask 'AD groups (comma-separated)' "$AD_GROUPS")"
   BL_MODE="$(ask 'BitLocker mode (TpmOnly|TpmPin)' "$BL_MODE")"
   BL_ESCROW="$(ask 'BitLocker escrow (AD|Entra|Both|None)' "$BL_ESCROW")"
   if [[ "$BL_MODE" == "TpmPin" ]]; then
@@ -194,7 +198,7 @@ fi
 
 # Single quotes would break the shell env file. Reject them rather than write
 # something that sources incorrectly.
-for value in "$ORG" "$PATTERN" "$OU" "$JOIN_USER" "$JOIN_PASS" "$GROUPS" "$UNC" "$READ_USER" "$READ_PASS" "$MODEL_MAP" "$BLOB" "$BASE_PACKS" "$MANIFEST"; do
+for value in "$ORG" "$PATTERN" "$OU" "$JOIN_USER" "$JOIN_PASS" "$AD_GROUPS" "$UNC" "$READ_USER" "$READ_PASS" "$MODEL_MAP" "$BLOB" "$BASE_PACKS" "$MANIFEST"; do
   [[ "$value" != *"'"* ]] || die "values may not contain a single quote (found in: $value)"
 done
 
@@ -238,7 +242,7 @@ JOG_DOMAIN_JOIN_BLOB='${BLOB}'
 JOG_HYBRID_JOIN='${HYBRID}'
 JOG_HYBRID_JOIN_TIMEOUT_MIN='${HYBRID_TIMEOUT}'
 
-JOG_AD_GROUPS='${GROUPS}'
+JOG_AD_GROUPS='${AD_GROUPS}'
 JOG_GROUPS_MODE='${GROUPS_MODE}'
 
 JOG_BITLOCKER_ENABLED='${BL_ENABLED}'
