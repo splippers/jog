@@ -5,6 +5,8 @@
  * Called by the JOS default PXE entry (jos-taskcheck.sh) after DHCP is up and
  * before the normal FOG host-key/hostinfo handshake. It does one thing:
  *
+ *   - if this host is unknown, register it from the booted MAC first — that
+ *     is what makes a laptop straight out of the box zero-touch;
  *   - if this host already has a task, leave it alone and say OK TASK;
  *   - if exactly one multicast session is still in its join window, create
  *     the same multicast task association the "Join Multicast Session" menu
@@ -21,6 +23,7 @@
  */
 
 use FOG\Base\FOGCore;
+use FOG\Items\Host;
 use FOG\Items\Image;
 use FOG\Items\MulticastSession;
 use FOG\Items\TaskType;
@@ -45,6 +48,67 @@ function jog_autojoin_out($line, $status = 200)
     http_response_code($status);
     echo $line . "\n";
     exit;
+}
+
+/**
+ * Register a machine FOG has never seen, from the MAC that booted it.
+ *
+ * This is the missing half of zero-touch: a laptop out of the box has no
+ * host record, so the old endpoint answered "host not registered" and JOS
+ * booted the local disk. We mirror FOG's quick registration — deterministic
+ * MAC-derived name, default modules, primary MAC — but deliberately assign
+ * no image here. The joinable multicast session below supplies the image,
+ * exactly as FOG's own "Join Multicast Session" menu does.
+ *
+ * @param string $mac pipe-separated MACs from the booting NIC
+ *
+ * @return Host
+ */
+function jog_autojoin_register($mac)
+{
+    $macs = array_values(array_unique(array_filter(array_map(
+        'trim',
+        explode('|', str_replace([',', ';'], '|', $mac))
+    ))));
+    if (!count($macs)) {
+        jog_autojoin_out('ERROR no usable MAC for registration', 400);
+    }
+
+    $primary = $macs[0];
+    $suffix = strtolower(str_replace([':', '-', '.'], '', $primary));
+    $name = 'JOG-' . substr($suffix, -8);
+
+    // A legacy record may already hold the generated name. Keep trying
+    // rather than failing the whole first-boot flow on a name collision.
+    $base = $name;
+    $counter = 1;
+    while (count(Route::getIds('host', ['name' => $name]))) {
+        $name = $base . '-' . $counter++;
+    }
+
+    $modules = Route::getIds('module', ['isDefault' => 1]);
+
+    $Host = new Host();
+    $Host
+        ->set('name', $name)
+        ->set(
+            'description',
+            sprintf('Auto-registered by JOG autojoin on %s', date('Y-m-d H:i:s'))
+        )
+        ->set('modules', $modules);
+    foreach ($macs as $address) {
+        if ($address === $primary) {
+            $Host->addPriMAC($address);
+        } else {
+            $Host->addMAC($address);
+        }
+    }
+    if (!$Host->save()) {
+        jog_autojoin_out('ERROR auto-registration failed', 500);
+    }
+    $Host->load();
+
+    return $Host;
 }
 
 /**
@@ -158,6 +222,12 @@ if (!$allowed) {
     jog_autojoin_out('ERROR forbidden', 403);
 }
 
+// Side-effect-free liveness probe. Health checks must not send a MAC: since
+// auto-registration was added, a dummy MAC would create a real host record.
+if (isset($_GET['probe']) || isset($_POST['probe'])) {
+    jog_autojoin_out('OK ALIVE');
+}
+
 try {
     // boot.php collects every mac* field; do the same so a host registered
     // under a NIC other than the one that booted can still be found.
@@ -193,7 +263,7 @@ try {
     FOGCore::getHostItem(false, false, true, false, false, $mac);
     $Host = FOGCore::$Host;
     if (!$Host->isValid()) {
-        jog_autojoin_out('ERROR host not registered', 400);
+        $Host = jog_autojoin_register($mac);
     }
     if ($Host->get('pending')) {
         jog_autojoin_out('ERROR host is pending registration', 400);
@@ -280,7 +350,8 @@ try {
     if (!($hostImage instanceof Image) || $hostImage->get('id') != $msImage) {
         $Host
             ->set('imagename', $session->getImage())
-            ->set('imageID', $msImage);
+            ->set('imageID', $msImage)
+            ->save();
     }
 
     $tasktype = Route::getItem('tasktype', TaskType::MULTICAST);

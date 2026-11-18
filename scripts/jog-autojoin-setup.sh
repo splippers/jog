@@ -51,16 +51,25 @@ check() {
     warn "WARN  JOG_AUTOJOIN_ALLOW_NET not set; endpoint defaults to the imaging /24"
   fi
   if command -v curl >/dev/null 2>&1; then
-    local code
-    code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 \
-      -X POST --data 'mac=00:00:00:00:00:00' \
+    local code body
+    body="$(curl -sS -w $'\n%{http_code}' --max-time 5 \
+      -X POST --data 'probe=1' \
       "http://127.0.0.1/fog/service/jog-autojoin.php" 2>/dev/null || true)"
-    case "$code" in
-      200|400) log "ok    endpoint is reachable (HTTP $code)" ;;
-      403) log "ok    endpoint is reachable but refused localhost (HTTP 403)" ;;
-      404) warn "FAIL  endpoint returns 404 (check $WEBROOT/service)"; rc=1 ;;
-      *) warn "WARN  endpoint returned HTTP ${code:-none}";;
-    esac
+    code="${body##*$'\n'}"
+    body="${body%$'\n'*}"
+    # The endpoint terminates its line with \n and curl adds another before
+    # the status, so the extracted body can still carry a trailing newline.
+    body="$(printf '%s' "$body" | tr -d '\r\n')"
+    if [[ "$code" == "200" && "$body" == "OK ALIVE" ]]; then
+      log "ok    endpoint is reachable (probe: $body)"
+    else
+      case "$code" in
+        404) warn "FAIL  endpoint returns 404 (check $WEBROOT/service)" ;;
+        403) warn "FAIL  endpoint refused localhost probe (HTTP 403); check JOG_AUTOJOIN_ALLOW_NET" ;;
+        *)   warn "WARN  endpoint probe returned HTTP ${code:-none}: ${body:-empty}" ;;
+      esac
+      rc=1
+    fi
   else
     warn "WARN  curl not installed; skipping endpoint reachability check"
   fi
