@@ -26,6 +26,7 @@ use FOG\Base\FOGCore;
 use FOG\Items\Host;
 use FOG\Items\Image;
 use FOG\Items\MulticastSession;
+use FOG\Items\Task;
 use FOG\Items\TaskType;
 use FOG\Router\Route;
 
@@ -271,9 +272,62 @@ try {
 
     // A task may already be queued by the web UI or by an earlier boot. Do
     // not create a second one; JOS will continue into the normal handshake.
+    //
+    // A multicast task whose session has finished, was cancelled, or lost its
+    // association can never progress: the sender is gone, hostinfo has nothing
+    // to hand the client, and FOS reboots. Host::loadTask() only selects
+    // queued/progress states, so such a task also shadows the join below.
+    // Retire it first, then continue as if the host had no task.
     $Task = $Host->get('task');
     if ($Task->isValid()) {
-        jog_autojoin_out('OK TASK ' . $Task->get('name'));
+        $stale = false;
+        if ($Task->isMulticast()) {
+            $msIDs = Route::getIds(
+                'multicastsessionassociation',
+                ['taskID' => $Task->get('id')],
+                'msID'
+            );
+            $stale = true;
+            // A retired session (msState=5, name cleared, senderpid=0) looks
+            // "joinable" to isJoinable() because it has no sender, so test the
+            // same state/name/size gates the join path uses.
+            $joinStates = array_map(
+                'intval',
+                array_merge(
+                    (array)FOGCore::getQueuedStates(),
+                    (array)FOGCore::getProgressState()
+                )
+            );
+            foreach ($msIDs as $msID) {
+                $ms = new MulticastSession((int)$msID);
+                if (!$ms->isValid()) {
+                    continue;
+                }
+                if (!in_array((int)$ms->get('stateID'), $joinStates, true)) {
+                    continue;
+                }
+                if (trim((string)$ms->get('name')) === '') {
+                    continue;
+                }
+                if ((int)$ms->get('sessclients') < 1) {
+                    continue;
+                }
+                if ($ms->isJoinable()) {
+                    $stale = false;
+                    break;
+                }
+            }
+        }
+        if (!$stale) {
+            jog_autojoin_out('OK TASK ' . $Task->get('name'));
+        }
+        $Task
+            ->set('stateID', FOGCore::getCompleteState())
+            ->save();
+        // createImagePackage() guards on $Host->get('task')->isValid(), and a
+        // Task object stays valid by id even after its state is changed, so
+        // clear the host's cached task as well or it still throws InTask.
+        $Host->set('task', new Task());
     }
 
     // Only sessions FOG itself would allow a client to join. This is the same
