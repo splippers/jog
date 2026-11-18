@@ -4,6 +4,9 @@
 # Usage:
 #   sudo jog-zero-touch-arm [--image NAME] [--clients N] [--name NAME]
 #
+# For one directly-connected test laptop use --clients 1. The default of 10
+# makes udp-sender wait for nine more receivers that will never arrive.
+#
 # Creates a fresh, named, joinable FOG multicast session. The JOS default PXE
 # entry calls jog-autojoin.php, which registers unknown hosts from their MAC
 # and attaches them to this session. Run this immediately before the laptops
@@ -54,6 +57,16 @@ IFACE="$("${MYSQL[@]}" "SELECT ngmInterface FROM nfsGroupMembers WHERE ngmIsMast
 ACTIVE_IDS="$("${MYSQL[@]}" "SELECT msID FROM multicastSessions WHERE msName='$SESSION_NAME' AND msState IN (1,2,3);" 2>/dev/null || true)"
 for id in $ACTIVE_IDS; do
   log "retiring previous session $id"
+  # Drop the old task/association too. Otherwise a retried boot finds the
+  # stale queued task, returns OK TASK, and never joins the fresh session.
+  OLD_TASKS="$("${MYSQL[@]}" "SELECT tID FROM multicastSessionsAssoc WHERE msID=$id;" 2>/dev/null || true)"
+  if [[ -n "$OLD_TASKS" ]]; then
+    log "retiring stale multicast task(s): $(echo "$OLD_TASKS" | tr '\n' ' ')"
+    "${MYSQL[@]}" "DELETE FROM multicastSessionsAssoc WHERE msID=$id;"
+    for tid in $OLD_TASKS; do
+      "${MYSQL[@]}" "DELETE FROM tasks WHERE taskID=$tid AND taskTypeID=8 AND taskStateID IN (1,2);"
+    done
+  fi
   OLD_PORT="$("${MYSQL[@]}" "SELECT msBasePort FROM multicastSessions WHERE msID=$id;")"
   "${MYSQL[@]}" "UPDATE multicastSessions SET msState=5, msName='', msSenderPID=0, msSenderNode=NULL, msSenderStart=NULL WHERE msID=$id;"
   [[ -n "${OLD_PORT:-}" ]] && pkill -f "udp-sender.*--portbase $OLD_PORT" 2>/dev/null || true
