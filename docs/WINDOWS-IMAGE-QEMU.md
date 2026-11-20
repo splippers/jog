@@ -63,14 +63,14 @@ For headless or remote use, run with `JOG_VM_DISPLAY=none`. A running VM exposes
 
 This lets a person or an assistant watch a Windows install or a PXE capture over SSH without a screen attached.
 
-## Single-machine test rig (Dell Latitude 3410: 8 GB RAM, 120 GB SSD boot, 256 GB NVMe)
+## Single-machine test rig (Dell Latitude 3410: 16 GB RAM after upgrade, 120 GB SSD boot, 256 GB NVMe)
 
 Everything (JOG, FOG, the VM and the captured image) runs on one machine. What that means:
 
 - **Put the VM on the NVMe.** Mount it and set `JOG_VM_DIR` there. Keep FOG's image store (`/images`) on the NVMe too:
   a capture writes a compressed image of 15 to 25 GB, which will not fit comfortably on the 120 GB boot SSD.
-- **Memory.** The default VM is 4 GB (Windows 11's minimum), leaving about 4 GB for Ubuntu, FOG, Apache and MariaDB.
-  Expect it to be tight. Do not raise `JOG_VM_MEM` on this host.
+- **Memory.** On 16 GB, give the VM 8 GB (`JOG_VM_MEM=8G`), leaving about 8 GB for Ubuntu, FOG, Apache and MariaDB. The script's
+  default is 4 GB, which is Windows 11's minimum and the safe choice on an 8 GB host. Do not go above half the host's RAM.
 - **Virtualisation must be on in the BIOS** (Intel VT-x). `scripts/jog-image-vm.sh check` reports `/dev/kvm` status.
 - **The VM needs a bridge, and the bridge must carry JOG's address.** JOG's dnsmasq serves one named interface
   (`JOG_USB_IFACE`, using `bind-dynamic`). To let the VM and the host share the imaging network, make the USB NIC a
