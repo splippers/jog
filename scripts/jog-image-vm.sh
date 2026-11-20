@@ -11,7 +11,7 @@ set -euo pipefail
 #
 # Environment:
 #   JOG_VM_DIR      REQUIRED. Where the disk, firmware vars and TPM state live. Needs about 100 GB free.
-#   JOG_VM_CPUS     default 4         JOG_VM_MEM  default 8G
+#   JOG_VM_CPUS     default 4         JOG_VM_MEM  default 4G (Windows 11 minimum; keep it low on an 8 GB host)
 #   JOG_VM_BRIDGE   bridge on the imaging network, required for `pxe` (the VM needs layer-2 access to JOG's DHCP/TFTP)
 #   JOG_VM_MAC      default 52:54:00:6a:6f:67   fixed NIC MAC so FOG recognises the VM as the same host every run
 #   JOG_VM_DISPLAY  default gtk       JOG_VM_DRYRUN=1  print the QEMU command instead of running it
@@ -24,7 +24,7 @@ die() { echo "jog-image-vm: $*" >&2; exit 1; }
 
 CMD="${1:-}"
 CPUS="${JOG_VM_CPUS:-4}"
-MEM="${JOG_VM_MEM:-8G}"
+MEM="${JOG_VM_MEM:-4G}"
 DISPLAY_KIND="${JOG_VM_DISPLAY:-gtk}"
 MAC="${JOG_VM_MAC:-52:54:00:6a:6f:67}"
 OVMF_CODE="${JOG_OVMF_CODE:-/usr/share/OVMF/OVMF_CODE_4M.ms.fd}"
