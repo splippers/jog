@@ -45,7 +45,12 @@ FOG_HOME="${FOG_HOME:-/opt/fog}"
 FOG_SRC="${FOG_SRC:-/opt/fogproject}"
 [[ "$FOG_SRC" != "$FOG_HOME" ]] || { echo "FOG_SRC must differ from FOG_HOME" >&2; exit 1; }
 FOG_GIT_URL="${FOG_GIT_URL:-https://github.com/FOGProject/fogproject.git}"
-FOG_GIT_REF="${FOG_GIT_REF:-}"
+# FOG is pinned to the release JOG was tested against (1.5.10.2518) and its commit is verified after the clone.
+# To move to another release: set FOG_GIT_REF and FOG_GIT_COMMIT together, re-run the VM test, then update here.
+# FOG_ALLOW_UNPINNED=1 skips the commit check (development only).
+FOG_GIT_REF="${FOG_GIT_REF:-1.5.10.2518}"
+FOG_GIT_COMMIT="${FOG_GIT_COMMIT:-c97e2050051a1056578e32556c20eba49a460b1d}"
+FOG_ALLOW_UNPINNED="${FOG_ALLOW_UNPINNED:-0}"
 
 prefix_to_mask() {
   case "${1:?}" in
@@ -81,11 +86,17 @@ export LC_ALL=C
 if [[ ! -f "${FOG_SRC}/bin/installfog.sh" ]]; then
   install -d "$(dirname "$FOG_SRC")"
   log "cloning ${FOG_GIT_URL} to ${FOG_SRC}"
-  if [[ -n "$FOG_GIT_REF" ]]; then
-    git clone --depth 1 --branch "$FOG_GIT_REF" "$FOG_GIT_URL" "$FOG_SRC"
-  else
-    git clone --depth 1 "$FOG_GIT_URL" "$FOG_SRC"
+  git clone --depth 1 --branch "$FOG_GIT_REF" "$FOG_GIT_URL" "$FOG_SRC"
+fi
+
+if [[ "$FOG_ALLOW_UNPINNED" != "1" ]]; then
+  got_commit="$(git -C "$FOG_SRC" rev-parse HEAD 2>/dev/null || true)"
+  if [[ "$got_commit" != "$FOG_GIT_COMMIT" ]]; then
+    echo "[fog-native-install] ERROR: FOG source at ${FOG_SRC} is ${got_commit:-not a git checkout}, expected ${FOG_GIT_COMMIT} (${FOG_GIT_REF})." >&2
+    echo "[fog-native-install] Remove ${FOG_SRC} to re-clone the pinned release, or set FOG_ALLOW_UNPINNED=1 for development." >&2
+    exit 1
   fi
+  log "FOG source verified: ${FOG_GIT_REF} (${FOG_GIT_COMMIT})"
 fi
 
 # Satisfy FOG installfog.sh non-interactive (-Y) input.sh loops (see FOG lib/common/input.sh).

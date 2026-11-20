@@ -31,7 +31,7 @@ autoinstall:
     layout:
       name: direct
   late-commands:
-    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 https://github.com/splippers/JOG.git /opt/JOG || (cd /opt/JOG && git pull --ff-only || true)'
+    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 --branch @JOG_REF@ https://github.com/splippers/JOG.git /opt/JOG'
     - curtin in-target --target=/target -- env JOG_SKIP_SYSTEMD=1 bash /opt/JOG/install/jog-install.sh || true
     # Bundled on this ISO (see installer/build-hyperv-single-iso.sh) so the remaster works before GitHub main contains these files.
     - curtin in-target --target=/target -- install -m 0755 /cdrom/installer-extra/jog-first-boot-unattended.sh /usr/local/bin/jog-first-boot-unattended.sh

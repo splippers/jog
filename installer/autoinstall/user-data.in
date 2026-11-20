@@ -34,7 +34,7 @@ autoinstall:
     - smbclient
     - ethtool
   late-commands:
-    - curtin in-target --target=/target -- bash -lc 'git clone https://github.com/splippers/JOG.git /opt/JOG || (cd /opt/JOG && git pull || true)'
+    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 --branch @JOG_REF@ https://github.com/splippers/JOG.git /opt/JOG'
     - curtin in-target --target=/target -- install -m 0755 /opt/JOG/installer/jog-install-wizard.sh /usr/local/sbin/jog-install-wizard.sh
     - curtin in-target --target=/target -- install -m 0644 /opt/JOG/installer/motd/jog-remind.sh /etc/profile.d/jog-remind.sh
     - curtin in-target --target=/target -- env JOG_SKIP_SYSTEMD=1 bash /opt/JOG/install/jog-install.sh || true
