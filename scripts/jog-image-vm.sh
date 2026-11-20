@@ -8,13 +8,15 @@ set -euo pipefail
 #   jog-image-vm.sh install <windows.iso> boot the Windows installer (your ISO and licence)
 #   jog-image-vm.sh boot                  boot the installed VM (customise, then run Sysprep /generalize /oobe /shutdown)
 #   jog-image-vm.sh pxe                   boot the generalised disk from the imaging network so JOS can capture it
+#   jog-image-vm.sh screenshot [file.png] save what the VM screen shows (works headless, for remote monitoring)
+#   jog-image-vm.sh monitor "<command>"   send a QEMU monitor command, e.g. "sendkey ret" or "system_powerdown"
 #
 # Environment:
 #   JOG_VM_DIR      REQUIRED. Where the disk, firmware vars and TPM state live. Needs about 100 GB free.
 #   JOG_VM_CPUS     default 4         JOG_VM_MEM  default 4G (Windows 11 minimum; keep it low on an 8 GB host)
 #   JOG_VM_BRIDGE   bridge on the imaging network, required for `pxe` (the VM needs layer-2 access to JOG's DHCP/TFTP)
 #   JOG_VM_MAC      default 52:54:00:6a:6f:67   fixed NIC MAC so FOG recognises the VM as the same host every run
-#   JOG_VM_DISPLAY  default gtk       JOG_VM_DRYRUN=1  print the QEMU command instead of running it
+#   JOG_VM_DISPLAY  default gtk (use "none" on a headless host; screenshot/monitor still work)      JOG_VM_DRYRUN=1  print the QEMU command instead of running it
 #
 # Hardware is deliberately plain: q35, NVMe disk, Intel e1000e NIC, USB tablet. Windows has inbox drivers for all of
 # these, so nothing third-party is downloaded or baked into the image. Secure Boot (Microsoft keys) and a TPM 2.0 are
@@ -61,6 +63,30 @@ check() {
   return $ok
 }
 
+# Send one human-monitor command to the running VM and print its reply.
+qemu_monitor() {
+  python3 - "${VMDIR}/monitor.sock" "$1" <<'PY'
+import socket, sys, time
+sock = socket.socket(socket.AF_UNIX); sock.settimeout(3); sock.connect(sys.argv[1])
+def drain():
+    out = b""
+    try:
+        while True:
+            chunk = sock.recv(65536)
+            if not chunk: break
+            out += chunk
+            if out.rstrip().endswith(b"(qemu)"): break
+    except socket.timeout: pass
+    return out
+drain(); sock.sendall(sys.argv[2].encode() + b"\n"); time.sleep(0.5)
+import re
+reply = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", drain().decode(errors="replace"))
+i = reply.rfind(sys.argv[2])            # drop the monitor's character-by-character echo of our command
+if i >= 0: reply = reply[i + len(sys.argv[2]):]
+print("\n".join(l.strip() for l in reply.splitlines() if l.strip() and "(qemu)" not in l))
+PY
+}
+
 run_qemu() {
   local mode="$1"; shift
   local -a args=(
@@ -74,6 +100,7 @@ run_qemu() {
     -device nvme,serial=jogimg0,drive=nvm0
     -device VGA -device qemu-xhci -device usb-tablet
     -display "$DISPLAY_KIND"
+    -monitor "unix:${VMDIR}/monitor.sock,server,nowait"
     -name "jog-image-vm"
   )
   case "$mode" in
@@ -112,6 +139,16 @@ case "$CMD" in
     echo "ISO SHA-256 (compare with the value on the Microsoft / VLSC download page):"
     sha256sum "$ISO" | awk '{print "  " $1}'
     run_qemu install "$ISO" ;;
+  screenshot)
+    need_dir; OUTPNG="${2:-${VMDIR}/screen-$(date +%Y%m%d-%H%M%S).png}"
+    [[ -S "${VMDIR}/monitor.sock" ]] || die "VM is not running (no monitor socket in ${VMDIR})."
+    qemu_monitor "screendump ${OUTPNG} -f png"; sleep 1
+    [[ -s "$OUTPNG" ]] || die "no screenshot written to ${OUTPNG}."
+    echo "$OUTPNG" ;;
+  monitor)
+    need_dir; [[ -n "${2:-}" ]] || die "give a QEMU monitor command."
+    [[ -S "${VMDIR}/monitor.sock" ]] || die "VM is not running (no monitor socket in ${VMDIR})."
+    qemu_monitor "$2" ;;
   boot) need_dir; [[ -f "$DISK" ]] || die "run 'create' first."; run_qemu boot ;;
   pxe)  need_dir; [[ -f "$DISK" ]] || die "run 'create' first."; run_qemu pxe ;;
   *) sed -n 2,22p "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;

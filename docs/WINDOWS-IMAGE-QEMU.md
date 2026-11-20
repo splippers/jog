@@ -53,6 +53,16 @@ QEMU's default user-mode networking. Create the bridge on the machine running QE
 `/etc/qemu/bridge.conf` (`allow <bridge>`). If JOG's imaging NIC is a USB Ethernet adapter on the same machine, bridge
 that adapter. Do not bridge onto your corporate LAN: JOG's design keeps DHCP/PXE off it.
 
+## Remote monitoring and control
+
+For headless or remote use, run with `JOG_VM_DISPLAY=none`. A running VM exposes a QEMU monitor socket in `JOG_VM_DIR`:
+
+- `scripts/jog-image-vm.sh screenshot [file.png]` saves what the VM screen shows (tested: a real 1280x800 PNG).
+- `scripts/jog-image-vm.sh monitor "info status"` runs a monitor command. Useful ones: `sendkey ret`, `sendkey ctrl-alt-delete`,
+  `system_powerdown`, `system_reset`, `info status`.
+
+This lets a person or an assistant watch a Windows install or a PXE capture over SSH without a screen attached.
+
 ## Single-machine test rig (Dell Latitude 3410: 8 GB RAM, 120 GB SSD boot, 256 GB NVMe)
 
 Everything (JOG, FOG, the VM and the captured image) runs on one machine. What that means:
