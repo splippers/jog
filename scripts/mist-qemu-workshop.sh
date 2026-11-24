@@ -2,11 +2,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORKSHOP_DIR="${MIST_QEMU_WORKSHOP_DIR:-${JOG_QEMU_WORKSHOP_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}}/mist/qemu-workshop}"
-WORKSHOP_BUDGET_GIB="${MIST_QEMU_WORKSHOP_BUDGET_GIB:-${JOG_QEMU_WORKSHOP_BUDGET_GIB:-100}}"
-OVMF_DIR="${MIST_QEMU_OVMF_DIR:-${JOG_QEMU_OVMF_DIR:-/usr/share/OVMF}}"
-QEMU_RAM_MIB="${MIST_QEMU_RAM_MIB:-${JOG_QEMU_RAM_MIB:-4096}}"
-QEMU_CPUS="${MIST_QEMU_CPUS:-${JOG_QEMU_CPUS:-2}}"
+WORKSHOP_DIR="${Brume_QEMU_WORKSHOP_DIR:-${JOG_QEMU_WORKSHOP_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}}/mist/qemu-workshop}"
+WORKSHOP_BUDGET_GIB="${Brume_QEMU_WORKSHOP_BUDGET_GIB:-${JOG_QEMU_WORKSHOP_BUDGET_GIB:-100}}"
+OVMF_DIR="${Brume_QEMU_OVMF_DIR:-${JOG_QEMU_OVMF_DIR:-/usr/share/OVMF}}"
+QEMU_RAM_MIB="${Brume_QEMU_RAM_MIB:-${JOG_QEMU_RAM_MIB:-4096}}"
+QEMU_CPUS="${Brume_QEMU_CPUS:-${JOG_QEMU_CPUS:-2}}"
 
 usage() {
   cat <<'EOF'
@@ -67,7 +67,7 @@ find_ovmf() {
 
 find_jos() {
   local candidate
-  for candidate in "${JOS_DIR:-}" "${ROOT}/../jos" "${ROOT}/jos" /opt/mist/jos /opt/MIST/jos; do
+  for candidate in "${JOS_DIR:-}" "${ROOT}/../jos" "${ROOT}/jos" /opt/mist/jos /opt/Brume/jos; do
     [[ -n "$candidate" && -x "$candidate/scripts/test-secureboot-vm.sh" ]] || continue
     JOS_DIR="$(cd "$candidate" && pwd)"
     return 0
@@ -213,7 +213,7 @@ case "$cmd" in
     else
       qemu_args+=(-boot order=c,menu=on)
     fi
-    display="${MIST_QEMU_DISPLAY:-${JOG_QEMU_DISPLAY:-gtk}}"
+    display="${Brume_QEMU_DISPLAY:-${JOG_QEMU_DISPLAY:-gtk}}"
     if [[ "$display" == "none" ]]; then
       qemu_args+=(-display none -serial mon:stdio)
     else

@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MIST Control Portal</title>
+<title>Brume Control Portal</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="bar">
-  <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">MIST</span><span class="sub">Control Portal</span></div>
+  <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">Brume</span><span class="sub">Control Portal</span></div>
   <div class="meta">
     <span class="chip" id="mode" hidden></span>
     <span class="conn" id="conn" role="status"><i></i><span>Connecting</span></span>
@@ -25,9 +25,9 @@
     <button data-panel="hosts">Hosts</button>
     <button data-panel="images">Images</button>
     <button data-panel="multicast">Multicast</button>
-    <button data-panel="replicate">Replicate MIST</button>
+    <button data-panel="replicate">Replicate Brume</button>
     <button data-panel="network">Network wizard</button>
-    <button data-panel="jogometry">MISTMETRY</button>
+    <button data-panel="mistmetry">Brumetry</button>
     <div class="nav-label">Virtual machines</div>
     <button data-panel="vm-fleet">VM fleet</button>
     <button data-panel="vm-build">Build VM</button>
@@ -77,7 +77,7 @@
     </section>
 
     <section class="panel" data-panel="tutorial">
-      <div class="panel-head"><div><h1>System tutorial</h1><p>A guided tour of every part of MIST: boot, networks, FOG, JOS, VMs, imaging, safety and operations.</p></div><button class="btn" data-refresh="tutorial">Refresh progress</button></div>
+      <div class="panel-head"><div><h1>System tutorial</h1><p>A guided tour of every part of Brume: boot, networks, FOG, JOS, VMs, imaging, safety and operations.</p></div><button class="btn" data-refresh="tutorial">Refresh progress</button></div>
       <div class="card tutorial-top">
         <div><div id="tutorial-progress-text" class="muted">0 of 11 chapters complete</div><strong id="tutorial-current">Chapter 1: The big picture</strong></div>
         <div class="progress"><span id="tutorial-progress-bar"></span></div>
@@ -90,7 +90,7 @@
           <button class="tutorial-tab" data-chapter="network">3. Networks and safety</button>
           <button class="tutorial-tab" data-chapter="portal">4. Control portal</button>
           <button class="tutorial-tab" data-chapter="fog">5. FOG server</button>
-          <button class="tutorial-tab" data-chapter="pxe">6. PXE and WISP/JOS</button>
+          <button class="tutorial-tab" data-chapter="pxe">6. PXE and Brume Agent/JOS</button>
           <button class="tutorial-tab" data-chapter="vm">7. Windows VM workshop</button>
           <button class="tutorial-tab" data-chapter="imaging">8. Imaging workflow</button>
           <button class="tutorial-tab" data-chapter="gift">9. Golden image gate</button>
@@ -100,13 +100,13 @@
         <div class="tutorial-content">
           <article class="tutorial-chapter active" data-chapter="big-picture">
             <div class="tutorial-kicker">Chapter 1</div><h2>The big picture</h2>
-            <p class="lead">MIST is the server side of a portable imaging appliance. It is an Ubuntu laptop running stock FOG, an isolated DHCP/TFTP imaging network, and a Chromium kiosk that points at this portal.</p>
-            <div class="flow"><span class="flow-step">Client PCs</span><span class="flow-arrow">PXE</span><span class="flow-step">MIST laptop</span><span class="flow-arrow">HTTP/NFS</span><span class="flow-step">FOG images</span></div>
+            <p class="lead">Brume is the server side of a portable imaging appliance. It is an Ubuntu laptop running stock FOG, an isolated DHCP/TFTP imaging network, and a Chromium kiosk that points at this portal.</p>
+            <div class="flow"><span class="flow-step">Client PCs</span><span class="flow-arrow">PXE</span><span class="flow-step">Brume laptop</span><span class="flow-arrow">HTTP/NFS</span><span class="flow-step">FOG images</span></div>
             <div class="two-col">
-              <div class="card"><h3>The four pieces</h3><ul><li><strong>MIST</strong> configures the laptop: Ubuntu, FOG install, DHCP/TFTP, firewall, kiosk, wizard and portal.</li><li><strong>FOG</strong> stays stock. It stores hosts, images, tasks and multicast sessions.</li><li><strong>JOS/WISP runtime</strong> is the client boot/runtime path that talks to FOG with the stock FOS userland.</li><li><strong>GIFT</strong> checks a Windows golden image before capture so stale images are rebuilt, not cloned.</li></ul></div>
+              <div class="card"><h3>The four pieces</h3><ul><li><strong>Brume</strong> configures the laptop: Ubuntu, FOG install, DHCP/TFTP, firewall, kiosk, wizard and portal.</li><li><strong>FOG</strong> stays stock. It stores hosts, images, tasks and multicast sessions.</li><li><strong>JOS/Brume Agent runtime</strong> is the client boot/runtime path that talks to FOG with the stock FOS userland.</li><li><strong>GIFT</strong> checks a Windows golden image before capture so stale images are rebuilt, not cloned.</li></ul></div>
               <div class="card"><h3>Three separate planes</h3><ul><li><strong>Imaging:</strong> USB Ethernet only, isolated DHCP/TFTP/PXE.</li><li><strong>Management:</strong> Wi-Fi or onboard Ethernet reaches FOG web, updates and this portal.</li><li><strong>VM lab:</strong> libvirt NAT gives Windows VMs internet without touching the imaging link.</li></ul></div>
             </div>
-            <div class="callout">Rule: MIST configures the laptop. JOS/WISP runtime runs on, or builds for, the machine being imaged. FOG remains an unmodified upstream server.</div>
+            <div class="callout">Rule: Brume configures the laptop. JOS/Brume Agent runtime runs on, or builds for, the machine being imaged. FOG remains an unmodified upstream server.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-chapter-complete="big-picture">Mark complete</button><button class="btn" data-next="boot">Next: Boot and kiosk</button></div>
           </article>
 
@@ -116,7 +116,7 @@
             <div class="flow"><span class="flow-step">Ubuntu autoinstall</span><span class="flow-arrow">then</span><span class="flow-step">mist-install-wizard</span><span class="flow-arrow">then</span><span class="flow-step">FOG + kiosk</span></div>
             <div class="two-col">
               <div class="card"><h3>What the installer builds</h3><ul><li><code>/opt/mist</code> (or <code>/opt/mist</code> compat): this repository and its scripts.</li><li><code>/opt/fogproject</code> and <code>/opt/fog</code>: stock FOG source and install tree.</li><li><code>/tftpboot</code>: signed shim, GRUB, kernel, initrd and modules for JOS.</li><li><code>/etc/mist/mist.env</code> (or <code>/etc/mist/mist.env</code> compat): live role configuration.</li></ul></div>
-              <div class="card"><h3>How the kiosk starts</h3><ul><li>LightDM autologs in <code>mist</code>.</li><li>The <code>mist-kiosk</code> session runs <code>/usr/local/bin/chromium-mist.sh</code> (or compat wrapper).</li><li>Chromium opens this portal first, then FOG management and the status page.</li><li><code>MIST_CHROMIUM_RESTART=1</code>  relaunches Chromium if it exits.</li></ul></div>
+              <div class="card"><h3>How the kiosk starts</h3><ul><li>LightDM autologs in <code>mist</code>.</li><li>The <code>mist-kiosk</code> session runs <code>/usr/local/bin/chromium-mist.sh</code> (or compat wrapper).</li><li>Chromium opens this portal first, then FOG management and the status page.</li><li><code>Brume_CHROMIUM_RESTART=1</code>  relaunches Chromium if it exits.</li></ul></div>
             </div>
             <div class="callout">No GNOME Shell is used. The kiosk depends on X11, LightDM, Chromium and this portal only.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="boot">Mark complete</button><button class="btn" data-next="network">Next: Networks and safety</button></div>
@@ -124,9 +124,9 @@
 
           <article class="tutorial-chapter" data-chapter="network">
             <div class="tutorial-kicker">Chapter 3</div><h2>Networks and safety</h2>
-            <p class="lead">MIST has deliberately separate network roles. Mixing them would put a DHCP server on the wrong link, which is the main hazard this appliance is designed to prevent.</p>
+            <p class="lead">Brume has deliberately separate network roles. Mixing them would put a DHCP server on the wrong link, which is the main hazard this appliance is designed to prevent.</p>
             <div class="two-col">
-              <div class="card"><h3>Interface roles</h3><ul><li><strong>Imaging:</strong> validated USB Ethernet, currently <code>enx34298f79151f</code>, static <code>10.99.0.1/24</code>.</li><li><strong>Backhaul:</strong> Wi-Fi <code>wlp0s20f3</code>, default route for updates and FOG web access.</li><li><strong>VM NAT:</strong> <code>virbr0</code> on <code>192.168.122.0/24</code>, forwarded through Wi-Fi.</li><li><strong>MISTMETRY:</strong> hidden management hotspot/API, never an imaging DHCP server.</li></ul></div>
+              <div class="card"><h3>Interface roles</h3><ul><li><strong>Imaging:</strong> validated USB Ethernet, currently <code>enx34298f79151f</code>, static <code>10.99.0.1/24</code>.</li><li><strong>Backhaul:</strong> Wi-Fi <code>wlp0s20f3</code>, default route for updates and FOG web access.</li><li><strong>VM NAT:</strong> <code>virbr0</code> on <code>192.168.122.0/24</code>, forwarded through Wi-Fi.</li><li><strong>Brumetry:</strong> hidden management hotspot/API, never an imaging DHCP server.</li></ul></div>
               <div class="card"><h3>The safety chain</h3><ol><li>The wizard only allows a USB-attached, non-wireless Ethernet NIC for imaging.</li><li><code>mist-dhcp-guard.py</code> probes for a foreign DHCP server before enabling DHCP.</li><li>dnsmasq binds only to that NIC, with <code>no-dhcp-interface</code> for every other physical NIC.</li><li>The portal reports <strong>armed</strong> only when all of those checks agree.</li></ol></div>
             </div>
             <div class="callout">The onboard NIC <code>eno1</code> is disabled. libvirt's <code>virbr0</code> runs its own VM DHCP service; it is not the imaging DHCP server.</div>
@@ -147,22 +147,22 @@
 
           <article class="tutorial-chapter" data-chapter="fog">
             <div class="tutorial-kicker">Chapter 5</div><h2>FOG server</h2>
-            <p class="lead">FOG is the inventory, image store and task scheduler. MIST does not fork it; the portal just drives its REST API with a dedicated API-only user.</p>
+            <p class="lead">FOG is the inventory, image store and task scheduler. Brume does not fork it; the portal just drives its REST API with a dedicated API-only user.</p>
             <div class="two-col">
               <div class="card"><h3>Services</h3><ul><li><code>apache2</code>: FOG web management.</li><li><code>mariadb</code>: host, image and task database.</li><li><code>tftpd-hpa</code>: PXE boot files.</li><li><code>nfs-server</code>: image transport for JOS clients.</li><li><code>FOGMulticastManager</code> and <code>FOGScheduler</code>: multicast and task timing.</li></ul></div>
               <div class="card"><h3>Objects you manage</h3><ul><li><strong>Hosts:</strong> machines identified by MAC address.</li><li><strong>Images:</strong> stored OS captures, normally zstd format for Linux/JOS workflows.</li><li><strong>Tasks:</strong> deploy, capture and multicast jobs.</li><li><strong>Sessions:</strong> multicast rooms with a port and client count.</li></ul></div>
             </div>
-            <div class="callout">FOG DHCP stays disabled. DHCP/TFTP are provided by MIST's isolated dnsmasq instance, not by FOG.</div>
-            <div class="row-buttons"><button class="btn primary" data-panel-link="hosts">Open Hosts</button><button class="btn" data-panel-link="images">Open Images</button><button class="btn" data-panel-link="tasks">Open Imaging tasks</button><button class="btn" data-chapter-complete="fog">Mark complete</button><button class="btn" data-next="pxe">Next: PXE and WISP/JOS</button></div>
+            <div class="callout">FOG DHCP stays disabled. DHCP/TFTP are provided by Brume's isolated dnsmasq instance, not by FOG.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="hosts">Open Hosts</button><button class="btn" data-panel-link="images">Open Images</button><button class="btn" data-panel-link="tasks">Open Imaging tasks</button><button class="btn" data-chapter-complete="fog">Mark complete</button><button class="btn" data-next="pxe">Next: PXE and Brume Agent/JOS</button></div>
           </article>
 
           <article class="tutorial-chapter" data-chapter="pxe">
-            <div class="tutorial-kicker">Chapter 6</div><h2>PXE and WISP/JOS</h2>
-            <p class="lead">Imaged machines do not boot a FOG kernel directly. They follow a signed UEFI chain into the JOS/WISP runtime, which then runs the stock FOS userland against FOG.</p>
-            <div class="flow"><span class="flow-step">UEFI PXE</span><span class="flow-arrow">shim</span><span class="flow-step">GRUB</span><span class="flow-arrow">signed kernel</span><span class="flow-step">JOS/WISP initrd</span><span class="flow-arrow">FOS userland</span><span class="flow-step">FOG</span></div>
+            <div class="tutorial-kicker">Chapter 6</div><h2>PXE and Brume Agent/JOS</h2>
+            <p class="lead">Imaged machines do not boot a FOG kernel directly. They follow a signed UEFI chain into the JOS/Brume Agent runtime, which then runs the stock FOS userland against FOG.</p>
+            <div class="flow"><span class="flow-step">UEFI PXE</span><span class="flow-arrow">shim</span><span class="flow-step">GRUB</span><span class="flow-arrow">signed kernel</span><span class="flow-step">JOS/Brume Agent initrd</span><span class="flow-arrow">FOS userland</span><span class="flow-step">FOG</span></div>
             <div class="two-col">
-              <div class="card"><h3>Boot chain</h3><ul><li>Microsoft-signed <code>shimx64.efi</code> is served first.</li><li>GRUB loads a Canonical-signed kernel, the JOS/WISP initrd and signed modules.</li><li>The boot menu offers deploy/capture, registration, system info, debug and memtest.</li><li><code>mist-stage-jos-boot.sh</code> (or compat) stages everything under <code>/tftpboot</code>.</li></ul></div>
-              <div class="card"><h3>Why JOS/WISP runtime exists</h3><ul><li>Stock FOS needs its own kernel and cannot boot with Dell Secure Boot enforcing keys.</li><li>JOS/WISP keeps FOS userland but uses a signed Ubuntu kernel and matching modules.</li><li><code>mist-doctor.sh</code> (or compat) verifies the staged chain and flags kernel drift.</li><li>The client fetches FOG files by HTTP and image data by NFS.</li></ul></div>
+              <div class="card"><h3>Boot chain</h3><ul><li>Microsoft-signed <code>shimx64.efi</code> is served first.</li><li>GRUB loads a Canonical-signed kernel, the JOS/Brume Agent initrd and signed modules.</li><li>The boot menu offers deploy/capture, registration, system info, debug and memtest.</li><li><code>mist-stage-jos-boot.sh</code> (or compat) stages everything under <code>/tftpboot</code>.</li></ul></div>
+              <div class="card"><h3>Why JOS/Brume Agent runtime exists</h3><ul><li>Stock FOS needs its own kernel and cannot boot with Dell Secure Boot enforcing keys.</li><li>JOS/Brume Agent keeps FOS userland but uses a signed Ubuntu kernel and matching modules.</li><li><code>mist-doctor.sh</code> (or compat) verifies the staged chain and flags kernel drift.</li><li>The client fetches FOG files by HTTP and image data by NFS.</li></ul></div>
             </div>
             <div class="callout">Memtest needs Secure Boot off. iPXE is omitted because it is unsigned and cannot be the first stage.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="pxe">Mark complete</button><button class="btn" data-next="vm">Next: Windows VM workshop</button></div>
@@ -206,8 +206,8 @@
             <div class="tutorial-kicker">Chapter 10</div><h2>Operations and scaling</h2>
             <p class="lead">Day-to-day operation is service health, logs and safe expansion. Never solve capacity by putting two DHCP servers on one broadcast domain.</p>
             <div class="two-col">
-              <div class="card"><h3>Daily operations</h3><ul><li>Use System and logs to restart services and read journal output.</li><li>Rotate FOG API tokens with <code>sudo /usr/local/sbin/mist-fog-api-init.sh --force</code> (or compat).</li><li>Restage JOS/WISP boot files after a kernel update.</li><li>Re-run the safety check after any NIC or network change.</li></ul></div>
-              <div class="card"><h3>Scaling patterns</h3><ul><li>One MIST per imaging switch or table, with non-overlapping subnets.</li><li>One FOG primary with storage nodes for fan-out.</li><li>Edge MIST nodes syncing <code>/images</code> from a primary.</li><li>Better switch fabric or 10GbE before adding more heads.</li></ul></div>
+              <div class="card"><h3>Daily operations</h3><ul><li>Use System and logs to restart services and read journal output.</li><li>Rotate FOG API tokens with <code>sudo /usr/local/sbin/mist-fog-api-init.sh --force</code> (or compat).</li><li>Restage JOS/Brume Agent boot files after a kernel update.</li><li>Re-run the safety check after any NIC or network change.</li></ul></div>
+              <div class="card"><h3>Scaling patterns</h3><ul><li>One Brume per imaging switch or table, with non-overlapping subnets.</li><li>One FOG primary with storage nodes for fan-out.</li><li>Edge Brume nodes syncing <code>/images</code> from a primary.</li><li>Better switch fabric or 10GbE before adding more heads.</li></ul></div>
             </div>
             <div class="callout">Only one DHCP server may answer on an imaging segment. Multicast sessions should also stay one per VLAN.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="system">Open System and logs</button><button class="btn" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="ops">Mark complete</button><button class="btn" data-next="troubleshoot">Next: Troubleshooting</button></div>
@@ -218,7 +218,7 @@
             <p class="lead">Most failures map to one of a few layers. Start at the layer that changed last, then move outward.</p>
             <div class="two-col">
               <div class="card"><h3>Quick diagnosis</h3><ul><li><strong>Safety review:</strong> imaging NIC missing, wireless, or not USB Ethernet; reattach and re-run the check.</li><li><strong>Portal offline:</strong> check <code>mist-imaging-api</code> and <code>http://127.0.0.1:8088/api/session</code>.</li><li><strong>FOG error:</strong> check service health and API tokens; do not assume the list is empty.</li><li><strong>VM no internet:</strong> check <code>virbr0</code>, libvirt NAT rules and the Wi-Fi default route.</li></ul></div>
-              <div class="card"><h3>Boot and kiosk failures</h3><ul><li>PXE fails: check <code>/tftpboot</code>, dnsmasq bootfile, and staged JOS/WISP files.</li><li>Secure Boot rejects boot: confirm shim, signed kernel and GRUB staging.</li><li>Kiosk fails: check <code>lightdm --show-config</code>, LightDM logs and <code>/tmp/mist-kiosk-mist.log</code> (or compat log).</li><li>NIC disappeared: check kernel USB disconnect messages and physical cabling.</li></ul></div>
+              <div class="card"><h3>Boot and kiosk failures</h3><ul><li>PXE fails: check <code>/tftpboot</code>, dnsmasq bootfile, and staged JOS/Brume Agent files.</li><li>Secure Boot rejects boot: confirm shim, signed kernel and GRUB staging.</li><li>Kiosk fails: check <code>lightdm --show-config</code>, LightDM logs and <code>/tmp/mist-kiosk-mist.log</code> (or compat log).</li><li>NIC disappeared: check kernel USB disconnect messages and physical cabling.</li></ul></div>
             </div>
             <div class="callout">Do not bypass safety to keep imaging running. A missing imaging NIC is a stop condition, not a reason to enable DHCP on another interface.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="troubleshoot">Mark complete</button></div>
@@ -269,7 +269,7 @@
           <label>Host<select id="mc-launch-host"></select></label>
           <label>Image<select id="mc-launch-image"></select></label>
           <label>VM<select id="mc-launch-vm"></select></label>
-          <label>Session name<input id="mc-launch-name" placeholder="MIST-LIVE"></label>
+          <label>Session name<input id="mc-launch-name" placeholder="Brume-LIVE"></label>
           <label>Port<input id="mc-launch-port" value="63100" type="number"></label>
           <label>Clients<input id="mc-launch-clients" value="1" type="number"></label>
           <label class="check"><input type="checkbox" id="mc-launch-start" checked> Start VM after preparing</label>
@@ -292,9 +292,9 @@
     </section>
 
     <section class="panel" data-panel="replicate">
-      <div class="panel-head"><div><h1>MIST replicator</h1><p>Turn one clean MIST install into more MIST systems using the same FOG imaging path as every other client.</p></div><button class="btn" data-refresh="replicate">Refresh</button></div>
+      <div class="panel-head"><div><h1>Brume replicator</h1><p>Turn one clean Brume install into more Brume systems using the same FOG imaging path as every other client.</p></div><button class="btn" data-refresh="replicate">Refresh</button></div>
       <div class="card fog-card">
-        <div class="hw-head"><div><h2>Create another MIST system</h2><p>Capture the generic source, then deploy it to any blank VM. The target runs an interactive first-boot wizard.</p></div><span id="rep-health" class="hw-status notice">Source image: mist-replicator</span></div>
+        <div class="hw-head"><div><h2>Create another Brume system</h2><p>Capture the generic source, then deploy it to any blank VM. The target runs an interactive first-boot wizard.</p></div><span id="rep-health" class="hw-status notice">Source image: mist-replicator</span></div>
         <div class="form-grid">
           <label>Source VM<select id="rep-source-vm"></select></label>
           <label>Target VM<select id="rep-target-vm"></select></label>
@@ -303,7 +303,7 @@
       </div>
       <div class="card"><div class="hw-head"><h2>Replicator status</h2><span id="rep-status" class="muted">Loading…</span></div><pre id="rep-detail" class="output"></pre></div>
       <div class="card">
-        <div class="callout">Flow: build a blank VM, deploy <code>mist-replicator</code> to it, open its console, then answer the first-boot wizard. The wizard installs FOG, JOS/WISP runtime, the kiosk and network settings on the new MIST system.</div>
+        <div class="callout">Flow: build a blank VM, deploy <code>mist-replicator</code> to it, open its console, then answer the first-boot wizard. The wizard installs FOG, JOS/Brume Agent runtime, the kiosk and network settings on the new Brume system.</div>
       </div>
     </section>
 
@@ -313,7 +313,7 @@
       <div class="wizard">
         <div class="card">
           <h2>1. Backhaul internet access</h2>
-          <p>Management-only path for updates, FOG web access and MISTMETRY reach-off. Never the imaging DHCP network.</p>
+          <p>Management-only path for updates, FOG web access and Brumetry reach-off. Never the imaging DHCP network.</p>
           <div class="form-grid">
             <label>Interface<select id="backhaul-iface"></select></label>
             <label>Mode<select id="backhaul-mode"><option value="dhcp">DHCP</option><option value="static">Static</option><option value="wifi">Wi-Fi</option></select></label>
@@ -344,11 +344,11 @@
           <button class="btn" id="network-check">Run safety check</button>
         </div>
         <div class="card">
-          <h2>3. MISTMETRY hidden hotspot</h2>
-          <p>USB WLAN becomes a hidden hostapd hotspot for the MISTMETRY Android management app.</p>
+          <h2>3. Brumetry hidden hotspot</h2>
+          <p>USB WLAN becomes a hidden hostapd hotspot for the Brumetry Android management app.</p>
           <div class="form-grid">
             <label>Interface<select id="hotspot-iface"></select></label>
-            <label>Hidden SSID<input id="hotspot-ssid" value="MISTMETRY"></label>
+            <label>Hidden SSID<input id="hotspot-ssid" value="Brumetry"></label>
             <label>WPA passphrase<input id="hotspot-pass" value=""></label>
             <label>Channel<input id="hotspot-channel" value="6" type="number"></label>
             <label>Address<input id="hotspot-ip" value="192.168.254.1"></label>
@@ -363,11 +363,11 @@
       <pre id="network-output" class="output" hidden></pre>
     </section>
 
-    <section class="panel" data-panel="jogometry">
-      <div class="panel-head"><div><h1>MISTMETRY management</h1><p>Hidden hotspot, token distribution and FOG API bearer codes for mobile monitoring.</p></div><button class="btn" id="jogometry-clients">Refresh clients</button></div>
+    <section class="panel" data-panel="mistmetry">
+      <div class="panel-head"><div><h1>Brumetry management</h1><p>Hidden hotspot, token distribution and FOG API bearer codes for mobile monitoring.</p></div><button class="btn" id="mistmetry-clients">Refresh clients</button></div>
       <div class="two-col">
-        <div class="card"><h2>Hotspot state</h2><div id="jogometry-state" class="kv"></div><button class="btn primary" id="jogometry-token">New QR token</button><pre id="jogometry-token-out" class="output" hidden></pre></div>
-        <div class="card"><h2>Associated clients</h2><pre id="jogometry-clients-out" class="output">No data yet.</pre><p class="note">MISTMETRY is management-only. It must never be the imaging DHCP server.</p></div>
+        <div class="card"><h2>Hotspot state</h2><div id="mistmetry-state" class="kv"></div><button class="btn primary" id="mistmetry-token">New QR token</button><pre id="mistmetry-token-out" class="output" hidden></pre></div>
+        <div class="card"><h2>Associated clients</h2><pre id="mistmetry-clients-out" class="output">No data yet.</pre><p class="note">Brumetry is management-only. It must never be the imaging DHCP server.</p></div>
       </div>
     </section>
 
@@ -721,6 +721,6 @@
     <div class="row-buttons"><button class="btn" id="confirm-cancel">Cancel</button><button class="btn danger" id="confirm-ok">Confirm</button></div>
   </div>
 </div>
-<script src="app.js"></script>
+<script src="app.js?v=1795556040"></script>
 </body>
 </html>

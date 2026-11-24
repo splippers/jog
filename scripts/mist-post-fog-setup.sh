@@ -26,7 +26,7 @@ set -a
 source /etc/mist/mist.env
 set +a
 
-if [[ "${MIST_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" ]]; then
+if [[ "${Brume_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" ]]; then
   if [[ -x /usr/local/sbin/mist-driver-share.sh ]]; then
     log "applying the driver share"
     /usr/local/sbin/mist-driver-share.sh --apply || warn "driver share apply failed"
@@ -35,7 +35,7 @@ if [[ "${MIST_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" ]]; th
   fi
 fi
 
-if [[ "${MIST_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" ]]; then
+if [[ "${Brume_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" ]]; then
   if [[ -x /usr/local/sbin/mist-model-api-setup.sh ]]; then
     log "installing the read-only FOG model API"
     /usr/local/sbin/mist-model-api-setup.sh --apply || warn "model API setup failed"
@@ -44,7 +44,7 @@ if [[ "${MIST_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" ]]; then
   fi
 fi
 
-if [[ "${MIST_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" ]]; then
+if [[ "${Brume_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" ]]; then
   if [[ -x /usr/local/sbin/mist-autojoin-setup.sh ]]; then
     log "installing the JOS multicast auto-join endpoint"
     /usr/local/sbin/mist-autojoin-setup.sh --apply || warn "auto-join endpoint setup failed"
@@ -53,7 +53,7 @@ if [[ "${MIST_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" ]]; then
   fi
 fi
 
-if [[ "${MIST_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" ]]; then
+if [[ "${Brume_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" ]]; then
   if [[ -x /usr/local/sbin/mist-multicast-tune.sh ]]; then
     log "applying the multicast profile"
     /usr/local/sbin/mist-multicast-tune.sh --apply || warn "multicast tune failed"
@@ -62,7 +62,7 @@ if [[ "${MIST_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" ]]; then
   fi
 fi
 
-if [[ "${MIST_PROVISIONING_ENABLE:-${JOG_PROVISIONING_ENABLE:-0}}" == "1" ]]; then
+if [[ "${Brume_PROVISIONING_ENABLE:-${JOG_PROVISIONING_ENABLE:-0}}" == "1" ]]; then
   if [[ -x /usr/local/sbin/mist-install-provisioner.sh ]]; then
     log "installing the Windows provisioning payload"
     /usr/local/sbin/mist-install-provisioner.sh || warn "provisioner install failed"

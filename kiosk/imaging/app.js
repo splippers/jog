@@ -1,3 +1,4 @@
+if(typeof Warning==="undefined"){window.Warning=class Warning extends Error{constructor(m){super(m);this.name="Warning";}};}
 const state = {
   mode: "live",
   adminUser: "mistadmin",
@@ -927,8 +928,8 @@ function hotspotToken() {
   const passphrase = randomToken(18);
   $("#hotspot-pass").value = passphrase;
   const bearer = randomToken(24);
-  output("#hotspot-token", "HOTSPOT_SSID=MISTMETRY\nWPA_PASSPHRASE=" + passphrase + "\nWIFI_QR_PAYLOAD=WIFI:T:WPA;S:MISTMETRY;P:" + passphrase + ";H:true;;\nMISTMETRY_BEARER=" + bearer);
-  output("#mistmetry-token-out", "WIFI_QR_PAYLOAD=WIFI:T:WPA;S:MISTMETRY;P:" + passphrase + ";H:true;;\nMISTMETRY_BEARER=" + bearer);
+  output("#hotspot-token", "HOTSPOT_SSID=Brumetry\nWPA_PASSPHRASE=" + passphrase + "\nWIFI_QR_PAYLOAD=WIFI:T:WPA;S:Brumetry;P:" + passphrase + ";H:true;;\nBrumetry_BEARER=" + bearer);
+  output("#mistmetry-token-out", "WIFI_QR_PAYLOAD=WIFI:T:WPA;S:Brumetry;P:" + passphrase + ";H:true;;\nBrumetry_BEARER=" + bearer);
 }
 
 async function applyNetwork(kind, reason) {
@@ -1432,7 +1433,7 @@ function wireEvents() {
       const result = await sudoRequest("/api/fog/multicast/launch", {
         hostId, imageId,
         vmNames: [vmName],
-        sessionName: value($("#mc-launch-name")) || "MIST-LIVE-" + Date.now().toString().slice(-4),
+        sessionName: value($("#mc-launch-name")) || "Brume-LIVE-" + Date.now().toString().slice(-4),
         port: value($("#mc-launch-port")) || "63100",
         clients: value($("#mc-launch-clients")) || "1",
         start: $("#mc-launch-start").checked,
@@ -1472,7 +1473,7 @@ function wireEvents() {
   $("#rep-capture").addEventListener("click", async () => {
     const vm = value($("#rep-source-vm")) || "mist-replicator";
     try {
-      const result = await sudoRequest("/api/mist/replicate", { action: "capture", vm }, "Capture " + vm + " as the reusable MIST replicator image?");
+      const result = await sudoRequest("/api/mist/replicate", { action: "capture", vm }, "Capture " + vm + " as the reusable Brume replicator image?");
       if (!result) return;
       banner("Task " + (result.taskId || "") + " capturing " + vm + " as mist-replicator.");
       await Promise.all([loadReplicator(), loadVMState(), loadDevices()]);
@@ -1707,7 +1708,7 @@ function wireEvents() {
   $("#mistmetry-token").addEventListener("click", hotspotToken);
   $("#hotspot-clients").addEventListener("click", async () => {
     try {
-      const result = await sudoRequest("/api/network/hotspot-clients", { iface: value($("#hotspot-iface")) }, "Read MISTMETRY hotspot clients.");
+      const result = await sudoRequest("/api/network/hotspot-clients", { iface: value($("#hotspot-iface")) }, "Read Brumetry hotspot clients.");
       if (!result) return;
       output("#network-output", result);
       output("#mistmetry-clients-out", result.output || result);

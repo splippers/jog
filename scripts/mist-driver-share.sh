@@ -2,7 +2,7 @@
 set -euo pipefail
 exec 2>>/tmp/mist_error.log
 
-# mist-driver-share.sh — idempotent Samba [Drivers] share for the MIST corporate pipeline.
+# mist-driver-share.sh — idempotent Samba [Drivers] share for the Brume corporate pipeline.
 #
 #   sudo mist-driver-share.sh --check     # report only, no changes
 #   sudo mist-driver-share.sh --apply     # create groups/users/path/share, reload Samba
@@ -44,15 +44,15 @@ if [[ -f /etc/mist/mist.env ]]; then
   set +a
 fi
 
-SHARE_NAME="${MIST_DRIVER_SHARE_NAME:-${JOG_DRIVER_SHARE_NAME:-Drivers}}"
-SHARE_PATH="${MIST_DRIVER_SHARE_PATH:-${JOG_DRIVER_SHARE_PATH:-/srv/mist/drivers}}"
-READ_USER="${MIST_DRIVER_READ_USER:-${JOG_DRIVER_READ_USER:-drivers}}"
-WRITE_USER="${MIST_DRIVER_WRITE_USER:-${JOG_DRIVER_WRITE_USER:-driveradmin}}"
-ALLOW_GUEST="${MIST_DRIVER_ALLOW_GUEST:-${JOG_DRIVER_ALLOW_GUEST:-0}}"
+SHARE_NAME="${Brume_DRIVER_SHARE_NAME:-${JOG_DRIVER_SHARE_NAME:-Drivers}}"
+SHARE_PATH="${Brume_DRIVER_SHARE_PATH:-${JOG_DRIVER_SHARE_PATH:-/srv/mist/drivers}}"
+READ_USER="${Brume_DRIVER_READ_USER:-${JOG_DRIVER_READ_USER:-drivers}}"
+WRITE_USER="${Brume_DRIVER_WRITE_USER:-${JOG_DRIVER_WRITE_USER:-driveradmin}}"
+ALLOW_GUEST="${Brume_DRIVER_ALLOW_GUEST:-${JOG_DRIVER_ALLOW_GUEST:-0}}"
 
-SHARE_USER="${MIST_DRIVER_SHARE_USER:-${JOG_DRIVER_SHARE_USER:-jogshare}}"
-READ_GROUP="${MIST_DRIVER_READ_GROUP:-${JOG_DRIVER_READ_GROUP:-jogdrivers}}"
-WRITE_GROUP="${MIST_DRIVER_WRITE_GROUP:-${JOG_DRIVER_WRITE_GROUP:-jogdriveradmin}}"
+SHARE_USER="${Brume_DRIVER_SHARE_USER:-${JOG_DRIVER_SHARE_USER:-jogshare}}"
+READ_GROUP="${Brume_DRIVER_READ_GROUP:-${JOG_DRIVER_READ_GROUP:-jogdrivers}}"
+WRITE_GROUP="${Brume_DRIVER_WRITE_GROUP:-${JOG_DRIVER_WRITE_GROUP:-jogdriveradmin}}"
 
 ENV_FILE="/etc/mist/driver-share.env"
 SMB_INCLUDE="/etc/samba/mist-drivers.conf"
@@ -138,7 +138,7 @@ write_include() {
 ${MARKER}
 # Read-only for clients, write for the upload account.
 [${SHARE_NAME}]
-   comment = MIST corporate driver repository
+   comment = Brume corporate driver repository
    path = ${SHARE_PATH}
    browseable = yes
    read only = yes
@@ -223,7 +223,7 @@ show_summary() {
   guest      : ${ALLOW_GUEST}
   include    : ${SMB_INCLUDE}
   credentials: ${ENV_FILE} (0600)
-  UNC        : \\\\${MIST_IMAGING_IP:-${JOG_IMAGING_IP:-10.99.0.1}}\\${SHARE_NAME}
+  UNC        : \\\\${Brume_IMAGING_IP:-${JOG_IMAGING_IP:-10.99.0.1}}\\${SHARE_NAME}
 EOF
 }
 

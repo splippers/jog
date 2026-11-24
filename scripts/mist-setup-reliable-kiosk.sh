@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 exec 2>>/tmp/mist_error.log
-# Install graphical stack tuned for MIST kiosk: X11-only session (ubuntu-xorg), LightDM,
+# Install graphical stack tuned for Brume kiosk: X11-only session (ubuntu-xorg), LightDM,
 # Chromium. Intended for Intel iGPU laptops (e.g. Dell Latitude 3410). Run as root.
 
 log() { echo "[mist-setup-reliable-kiosk] $*"; }
@@ -12,7 +12,7 @@ log() { echo "[mist-setup-reliable-kiosk] $*"; }
 }
 
 KIOSK_USER="${1:-jogadmin}"
-ROOT="${MIST_REPO:-${JOG_REPO:-/opt/MIST}}"
+ROOT="${Brume_REPO:-${JOG_REPO:-/opt/Brume}}"
 [[ -d "$ROOT" ]] || ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 export DEBIAN_FRONTEND=noninteractive

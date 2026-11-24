@@ -1,5 +1,5 @@
 #!/bin/bash
-## MIST post-download injection.
+## Brume post-download injection.
 ##
 ## Sourced from fog.postdownload inside the FOS/JOS environment. Copies the Windows
 ## provisioner payload from the NFS-mounted post-download directory onto the freshly
@@ -69,18 +69,18 @@
     exit 0
   fi
 
-  mkdir -p "$mnt/ProgramData/MIST/logs" "$mnt/ProgramData/MIST/Secrets" "$mnt/Windows/Setup/Scripts"
+  mkdir -p "$mnt/ProgramData/Brume/logs" "$mnt/ProgramData/Brume/Secrets" "$mnt/Windows/Setup/Scripts"
 
-  echo "[mist-inject] copying payload to $winpart (C:\\ProgramData\\MIST)"
-  cp -a "$payload"/. "$mnt/ProgramData/MIST/" 2>/dev/null || cp -R "$payload"/. "$mnt/ProgramData/MIST/" 2>/dev/null
+  echo "[mist-inject] copying payload to $winpart (C:\\ProgramData\\Brume)"
+  cp -a "$payload"/. "$mnt/ProgramData/Brume/" 2>/dev/null || cp -R "$payload"/. "$mnt/ProgramData/Brume/" 2>/dev/null
 
   # Never leave the example config as the live config.
-  rm -f "$mnt/ProgramData/MIST/mist-provisioning.example.json" 2>/dev/null
+  rm -f "$mnt/ProgramData/Brume/mist-provisioning.example.json" 2>/dev/null
 
   sc="$mnt/Windows/Setup/Scripts/SetupComplete.cmd"
   if [[ -f "$sc" ]]; then
     if ! grep -q "Start-JOGProvisioning.ps1" "$sc" 2>/dev/null; then
-      printf '\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\ProgramData\\MIST\\Start-JOGProvisioning.ps1" -Resume\r\n' >> "$sc"
+      printf '\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\ProgramData\\Brume\\Start-JOGProvisioning.ps1" -Resume\r\n' >> "$sc"
       echo "[mist-inject] appended the provisioner call to the existing SetupComplete.cmd"
     else
       echo "[mist-inject] SetupComplete.cmd already calls the provisioner"
@@ -90,11 +90,11 @@
       sed 's/$/\r/' "$payload/SetupComplete.cmd" > "$sc"
       echo "[mist-inject] installed SetupComplete.cmd"
     else
-      printf '@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\ProgramData\\MIST\\Start-JOGProvisioning.ps1" -Resume\r\n' > "$sc"
+      printf '@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\\ProgramData\\Brume\\Start-JOGProvisioning.ps1" -Resume\r\n' > "$sc"
       echo "[mist-inject] wrote a minimal SetupComplete.cmd"
     fi
   fi
 
   sync
-  echo "[mist-inject] provisioner injected into C:\\ProgramData\\MIST"
+  echo "[mist-inject] provisioner injected into C:\\ProgramData\\Brume"
 ) || true

@@ -2,23 +2,23 @@
 set -euo pipefail
 exec 2>>/tmp/mist_error.log
 
-# Interactive setup for MIST (hostname, imaging network, DHCP, admin user, optional EFI staging).
+# Interactive setup for Brume (hostname, imaging network, DHCP, admin user, optional EFI staging).
 # Requires: dialog, root. Idempotent-ish: re-run to overwrite generated configs.
 
 : "${DIALOG:=dialog}"
 
-log() { echo "MIST-WIZARD: $*"; }
-die() { echo "MIST-WIZARD-ERROR: $*" >&2; exit 1; }
+log() { echo "Brume-WIZARD: $*"; }
+die() { echo "Brume-WIZARD-ERROR: $*" >&2; exit 1; }
 
 [[ "$(id -u)" -eq 0 ]] || die "Run as root (sudo mist-install-wizard)"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$SCRIPT_DIR" == "/usr/local/sbin" || "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
-  REPO_ROOT="${MIST_REPO:-${JOG_REPO:-/opt/MIST/mist}}"
+  REPO_ROOT="${Brume_REPO:-${JOG_REPO:-/opt/Brume/mist}}"
 else
   REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 fi
-[[ -x "${REPO_ROOT}/install/fog-native-install.sh" ]] || die "MIST repo not found at ${REPO_ROOT} (set MIST_REPO=...)"
+[[ -x "${REPO_ROOT}/install/fog-native-install.sh" ]] || die "Brume repo not found at ${REPO_ROOT} (set Brume_REPO=...)"
 
 if ! command -v dialog >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
   apt-get update -qq
@@ -37,8 +37,8 @@ DEF_DHCP_END="10.99.0.250"
 # this exact name used to shadow that fact; removed.)
 
 # --- Welcome ---
-$DIALOG --title "MIST setup" --msgbox \
-"Welcome to MIST (Mobile Imaging System Toolkit).
+$DIALOG --title "Brume setup" --msgbox \
+"Welcome to Brume (Mobile Imaging System Toolkit).
 
 This wizard will ask for:
   • system hostname
@@ -57,7 +57,7 @@ you confirm when prompted.
 Press OK to continue." 22 70 || exit 0
 
 # --- Hostname ---
-HOSTNAME="$($DIALOG --stdout --title "Hostname" --inputbox "Short hostname for this MIST laptop (DNS / UI):" 10 60 "${DEF_HOSTNAME}" || true)"
+HOSTNAME="$($DIALOG --stdout --title "Hostname" --inputbox "Short hostname for this Brume laptop (DNS / UI):" 10 60 "${DEF_HOSTNAME}" || true)"
 [[ -n "${HOSTNAME// }" ]] || HOSTNAME="$DEF_HOSTNAME"
 
 # --- Imaging NIC menu (USB recommended; onboard allowed with confirmation) ---
@@ -83,12 +83,12 @@ that might carry a corporate LAN unless you understand the risk.
 
 WiFi must NOT be used as the imaging NIC." 22 72 12 \
 "${IFACE_ITEMS[@]}" 2>&1)" || exit 0
-  MIST_USB_IFACE="${IFACES[$IDX]}"
+  Brume_USB_IFACE="${IFACES[$IDX]}"
   if [[ "$JOG_USB_IFACE" =~ ^enx ]]; then
     break
   fi
   $DIALOG --title "Confirm non-USB-style NIC" --yesno \
-"You selected ${JOG_USB_IFACE}. MIST recommends a USB Gigabit adapter (typically enx…)
+"You selected ${JOG_USB_IFACE}. Brume recommends a USB Gigabit adapter (typically enx…)
 for imaging so you are less likely to bridge imaging traffic onto a corporate LAN.
 
 Use ${JOG_USB_IFACE} anyway?" 14 72 && break
@@ -103,7 +103,7 @@ IMAGING_IP="${IMAGING_IP:-$DEF_IMAGING_IP}"
 PREFIX="${PREFIX:-$DEF_PREFIX}"
 DHCP_START="${DHCP_START:-$DEF_DHCP_START}"
 DHCP_END="${DHCP_END:-$DEF_DHCP_END}"
-ROUTER="$($DIALOG --stdout --title "Default gateway for PXE clients" --inputbox "Usually the same as the MIST IP on this cable:" 10 60 "${IMAGING_IP}" || true)"
+ROUTER="$($DIALOG --stdout --title "Default gateway for PXE clients" --inputbox "Usually the same as the Brume IP on this cable:" 10 60 "${IMAGING_IP}" || true)"
 NEXT_SERVER="$($DIALOG --stdout --title "NEXT SERVER (TFTP/PXE)" --inputbox "Must match siaddr / tftp-server for clients (usually this laptop on USB):" 10 60 "${IMAGING_IP}" || true)"
 ROUTER="${ROUTER:-$IMAGING_IP}"
 NEXT_SERVER="${NEXT_SERVER:-$IMAGING_IP}"
@@ -117,7 +117,7 @@ try:
     interface = ipaddress.IPv4Interface(f"{address}/{int(prefix)}")
     network = interface.network
     if interface.ip in (network.network_address, network.broadcast_address):
-        raise ValueError("MIST imaging IP must be a usable host address")
+        raise ValueError("Brume imaging IP must be a usable host address")
     pool_start = ipaddress.IPv4Address(start)
     pool_end = ipaddress.IPv4Address(end)
     gateway = ipaddress.IPv4Address(router)
@@ -129,7 +129,7 @@ try:
             or pool_end in (network.network_address, network.broadcast_address)):
         raise ValueError("DHCP pool must be an ascending range inside the imaging subnet")
     if address in (start, end) or pool_start <= interface.ip <= pool_end:
-        raise ValueError("DHCP pool must not include the MIST imaging IP")
+        raise ValueError("DHCP pool must not include the Brume imaging IP")
     if (gateway not in network or tftp not in network
             or gateway in (network.network_address, network.broadcast_address)
             or tftp in (network.network_address, network.broadcast_address)):
@@ -147,15 +147,15 @@ fi
 
 # --- Cluster (optional) ---
 CLUSTER_MODE="$($DIALOG --stdout --title "Cluster mode" --menu \
-"Multiple MIST units on one busy network: choose how this node participates." 18 70 4 \
-standalone "Single MIST (default)" \
+"Multiple Brume units on one busy network: choose how this node participates." 18 70 4 \
+standalone "Single Brume (default)" \
 edge "Edge node: sync images from primary + optional split DHCP" \
 primary "Mark as primary (hint file for edge nodes)" \
 2>&1)" || CLUSTER_MODE="standalone"
 
 PRIMARY_SSH=""
 if [[ "$CLUSTER_MODE" == "edge" ]]; then
-  PRIMARY_SSH="$($DIALOG --stdout --title "Primary SSH" --inputbox "Primary MIST sync source (user@host), e.g. jogadmin@10.99.0.1:" 10 60 "" || true)"
+  PRIMARY_SSH="$($DIALOG --stdout --title "Primary SSH" --inputbox "Primary Brume sync source (user@host), e.g. jogadmin@10.99.0.1:" 10 60 "" || true)"
 fi
 
 # --- Admin user ---
@@ -247,7 +247,7 @@ fi
 touch /etc/mist/wizard.done
 
 $DIALOG --title "Done" --msgbox \
-"MIST wizard finished.
+"Brume wizard finished.
 
 Automated for you:
   • Signed Ubuntu EFI binaries → /tftpboot/ubuntu-signed/ (if apt could reach the mirror)

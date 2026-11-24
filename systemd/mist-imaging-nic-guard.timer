@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST — keep the imaging NIC address present (survives netplan apply)
+Description=Brume — keep the imaging NIC address present (survives netplan apply)
 
 [Timer]
 OnBootSec=15s

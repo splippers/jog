@@ -32,16 +32,16 @@ die()  { echo "[mist-install-provisioner] ERROR: $*" >&2; exit 1; }
 CONFIG=/etc/mist/provisioning.env
 JOG_ENV=/etc/mist/mist.env
 DRIVER_ENV=/etc/mist/driver-share.env
-PAYLOAD_DIR="${MIST_PAYLOAD_DIR:-${JOG_PAYLOAD_DIR:-/images/postdownloadscripts/mist-provisioner}}"
+PAYLOAD_DIR="${Brume_PAYLOAD_DIR:-${JOG_PAYLOAD_DIR:-/images/postdownloadscripts/mist-provisioner}}"
 POSTDOWN_DIR=/images/postdownloadscripts
 HOOK="$POSTDOWN_DIR/fog.postdownload"
 INJECT_NAME=mist-inject-provisioner.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SRC="${MIST_PROVISIONER_SRC:-${JOG_PROVISIONER_SRC:-/usr/local/share/mist/provisioner/windows}}"
+SRC="${Brume_PROVISIONER_SRC:-${JOG_PROVISIONER_SRC:-/usr/local/share/mist/provisioner/windows}}"
 [[ -f "$SRC/Start-JOGProvisioning.ps1" ]] || SRC="$ROOT/provisioner/windows"
-INJECT_SRC="${MIST_INJECT_SRC:-${JOG_INJECT_SRC:-/usr/local/share/mist/postdownload/$INJECT_NAME}}"
+INJECT_SRC="${Brume_INJECT_SRC:-${JOG_INJECT_SRC:-/usr/local/share/mist/postdownload/$INJECT_NAME}}"
 [[ -f "$INJECT_SRC" ]] || INJECT_SRC="$ROOT/install/postdownload/$INJECT_NAME"
 
 MODE=install
@@ -112,11 +112,11 @@ fi
 export JOG_DRIVER_READ_PASSWORD="$READ_PASS"
 
 [[ -n "${JOG_DOMAIN:-}" ]] || die "JOG_DOMAIN is empty in $CONFIG"
-[[ "${MIST_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" =~ ^(Offline|Credential)$ ]] || die "JOG_DOMAIN_JOIN_MODE must be Offline or Credential"
-[[ "${MIST_BITLOCKER_ESCROW:-${JOG_BITLOCKER_ESCROW:-AD}}" =~ ^(AD|Entra|Both|None)$ ]] || die "JOG_BITLOCKER_ESCROW must be AD, Entra, Both, or None"
-[[ "${MIST_PROVISIONING_MODE:-${JOG_PROVISIONING_MODE:-AirGapped}}" =~ ^(AirGapped|Connected)$ ]] || die "JOG_PROVISIONING_MODE must be AirGapped or Connected"
-[[ "${MIST_BITLOCKER_PIN_STORAGE:-${JOG_BITLOCKER_PIN_STORAGE:-None}}" =~ ^(None|LocalDPAPI|ADCustomAttribute)$ ]] || die "JOG_BITLOCKER_PIN_STORAGE is invalid"
-if [[ "${MIST_BITLOCKER_PIN_STORAGE:-${JOG_BITLOCKER_PIN_STORAGE:-None}}" == "ADCustomAttribute" && "${MIST_BITLOCKER_ALLOW_AD_PIN_STORAGE:-${JOG_BITLOCKER_ALLOW_AD_PIN_STORAGE:-0}}" != "1" ]]; then
+[[ "${Brume_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" =~ ^(Offline|Credential)$ ]] || die "JOG_DOMAIN_JOIN_MODE must be Offline or Credential"
+[[ "${Brume_BITLOCKER_ESCROW:-${JOG_BITLOCKER_ESCROW:-AD}}" =~ ^(AD|Entra|Both|None)$ ]] || die "JOG_BITLOCKER_ESCROW must be AD, Entra, Both, or None"
+[[ "${Brume_PROVISIONING_MODE:-${JOG_PROVISIONING_MODE:-AirGapped}}" =~ ^(AirGapped|Connected)$ ]] || die "JOG_PROVISIONING_MODE must be AirGapped or Connected"
+[[ "${Brume_BITLOCKER_PIN_STORAGE:-${JOG_BITLOCKER_PIN_STORAGE:-None}}" =~ ^(None|LocalDPAPI|ADCustomAttribute)$ ]] || die "JOG_BITLOCKER_PIN_STORAGE is invalid"
+if [[ "${Brume_BITLOCKER_PIN_STORAGE:-${JOG_BITLOCKER_PIN_STORAGE:-None}}" == "ADCustomAttribute" && "${Brume_BITLOCKER_ALLOW_AD_PIN_STORAGE:-${JOG_BITLOCKER_ALLOW_AD_PIN_STORAGE:-0}}" != "1" ]]; then
   die "ADCustomAttribute requires JOG_BITLOCKER_ALLOW_AD_PIN_STORAGE=1"
 fi
 
@@ -125,19 +125,19 @@ install -d -m 0755 "$PAYLOAD_DIR"
 # --- offline join blob -----------------------------------------------------
 
 BLOB_SRC="${JOG_DOMAIN_JOIN_BLOB:-}"
-BLOB_WIN='C:\ProgramData\MIST\domainjoin.blob'
+BLOB_WIN='C:\ProgramData\Brume\domainjoin.blob'
 rm -f "$PAYLOAD_DIR/domainjoin.blob"
 if [[ -n "$BLOB_SRC" && -f "$BLOB_SRC" ]]; then
   install -m 0640 -g "$FOG_GROUP" "$BLOB_SRC" "$PAYLOAD_DIR/domainjoin.blob"
-  BLOB_WIN='C:\ProgramData\MIST\domainjoin.blob'
+  BLOB_WIN='C:\ProgramData\Brume\domainjoin.blob'
   log "included offline join blob: $BLOB_SRC"
 elif [[ -n "$BLOB_SRC" && "$BLOB_SRC" == *\\* ]]; then
   BLOB_WIN="$BLOB_SRC"
   warn "JOG_DOMAIN_JOIN_BLOB looks like a Windows path; it is not copied"
-elif [[ "${MIST_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" == "Offline" ]]; then
+elif [[ "${Brume_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" == "Offline" ]]; then
   warn "offline join selected but no djoin blob was copied; devices will stay DOMAIN_JOIN_PENDING"
 fi
-if [[ "${MIST_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" == "Offline" ]]; then
+if [[ "${Brume_DOMAIN_JOIN_MODE:-${JOG_DOMAIN_JOIN_MODE:-Credential}}" == "Offline" ]]; then
   warn "one djoin blob joins one computer account: do not deploy this payload to a fleet in Offline mode"
 fi
 export JOG_DOMAIN_JOIN_BLOB_WIN="$BLOB_WIN"
@@ -185,7 +185,7 @@ config = {
     "DomainNetbios": env("JOG_DOMAIN_NETBIOS", "CORP"),
     "DomainJoin": {
         "Mode": env("JOG_DOMAIN_JOIN_MODE", "Credential"),
-        "BlobPath": env("JOG_DOMAIN_JOIN_BLOB_WIN", r"C:\ProgramData\MIST\domainjoin.blob"),
+        "BlobPath": env("JOG_DOMAIN_JOIN_BLOB_WIN", r"C:\ProgramData\Brume\domainjoin.blob"),
         "User": env("JOG_DOMAIN_JOIN_USER"),
         "Password": env("JOG_DOMAIN_JOIN_PASSWORD"),
         "OUPath": env("JOG_DOMAIN_JOIN_OU"),
@@ -248,7 +248,7 @@ if [[ -n "$HOOK" ]]; then
     cp -a "$HOOK" "$BACKUP"
     {
       echo
-      echo "## MIST corporate provisioner payload (no-op if not installed)"
+      echo "## Brume corporate provisioner payload (no-op if not installed)"
       echo "[ -f \"\${postdownpath}${INJECT_NAME}\" ] && . \"\${postdownpath}${INJECT_NAME}\""
     } >> "$HOOK"
     chown "$FOG_USER:$FOG_GROUP" "$HOOK"
@@ -261,4 +261,4 @@ fi
 log "payload installed: $PAYLOAD_DIR"
 log "rendered config : $OUT (0640, $FOG_USER:$FOG_GROUP)"
 log "injection hook  : $POSTDOWN_DIR/$INJECT_NAME"
-log "next            : deploy an image; the payload is copied to C:\\ProgramData\\MIST on first boot"
+log "next            : deploy an image; the payload is copied to C:\\ProgramData\\Brume on first boot"

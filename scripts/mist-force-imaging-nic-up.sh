@@ -21,7 +21,7 @@ log() { echo "[mist-force-imaging-nic-up] $*"; }
   exit 1
 }
 
-JOG_ENV="${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
+JOG_ENV="${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
 [[ -f "$JOG_ENV" ]] || { log "missing $JOG_ENV - nothing to apply"; exit 1; }
 # shellcheck disable=SC1090
 source "$JOG_ENV"

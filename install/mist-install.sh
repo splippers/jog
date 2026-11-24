@@ -2,7 +2,7 @@
 set -euo pipefail
 exec 2>>/tmp/mist_error.log
 
-# Install MIST helpers on the laptop (run with sudo).
+# Install Brume helpers on the laptop (run with sudo).
 # Repo root = directory containing install/, scripts/, config/
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,7 +11,7 @@ install -d /etc/mist /usr/local/bin /var/lib/mist/status
 
 if [[ ! -f /etc/mist/mist.env ]]; then
   install -m 0644 "${ROOT}/config/mist.env.example" /etc/mist/mist.env
-  echo "Created /etc/mist/mist.env — EDIT MIST_USB_IFACE and IPs before starting dnsmasq."
+  echo "Created /etc/mist/mist.env — EDIT Brume_USB_IFACE and IPs before starting dnsmasq."
 fi
 
 install -m 0755 "${ROOT}/scripts/mist-render-dnsmasq.sh" /usr/local/bin/mist-render-dnsmasq.sh
@@ -25,8 +25,8 @@ install -m 0755 "${ROOT}/scripts/mist-sync-images-from-primary.sh" /usr/local/bi
 install -m 0755 "${ROOT}/install/fog-native-install.sh" /usr/local/sbin/fog-native-install.sh
 install -m 0755 "${ROOT}/scripts/mist-copy-signed-ubuntu-efi-to-tftpboot.sh" /usr/local/sbin/mist-copy-signed-ubuntu-efi-to-tftpboot.sh
 # The JOS client runtime lives in its own repo (github.com/splippers/jos). Find a checkout: $JOS_DIR, a sibling
-# of this repo (the mist-jos layout), a jos/ inside it, or the legacy /opt/MIST/jos.
-for d in "${JOS_DIR:-}" "${ROOT}/../jos" "${ROOT}/jos" /opt/mist/jos /opt/MIST/jos; do
+# of this repo (the mist-jos layout), a jos/ inside it, or the legacy /opt/Brume/jos.
+for d in "${JOS_DIR:-}" "${ROOT}/../jos" "${ROOT}/jos" /opt/mist/jos /opt/Brume/jos; do
   [[ -n "$d" && -f "$d/scripts/jos-stage-boot.sh" ]] && { JOS_DIR="$(cd "$d" && pwd)"; break; }
 done
 if [[ -f "${JOS_DIR:-}/scripts/jos-stage-boot.sh" ]]; then
@@ -102,7 +102,7 @@ mkdir -p /etc/xdg/autostart
 install -m 0644 "${ROOT}/kiosk/mist-chromium.desktop" /etc/xdg/autostart/mist-chromium.desktop
 
 # During ISO late-commands (curtin in-target), systemd is not operational — skip.
-if [[ "${MIST_SKIP_SYSTEMD:-${JOG_SKIP_SYSTEMD:-0}}" != "1" ]] && [[ -d /run/systemd/system ]]; then
+if [[ "${Brume_SKIP_SYSTEMD:-${JOG_SKIP_SYSTEMD:-0}}" != "1" ]] && [[ -d /run/systemd/system ]]; then
   systemctl daemon-reload
   systemctl enable mist-render-dnsmasq.service || true
   systemctl enable mist-force-imaging-nic-up.service || true

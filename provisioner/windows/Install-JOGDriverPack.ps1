@@ -1,17 +1,17 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Copy the latest MIST-staged Dell driver pack locally and install its INF files.
+    Copy the latest Brume-staged Dell driver pack locally and install its INF files.
 
 .DESCRIPTION
     Prompts for the read-only SMB account instead of storing a share password in
-    the image. MIST updates the Latitude 3440 pack on the share from Dell's
+    the image. Brume updates the Latitude 3440 pack on the share from Dell's
     official catalog; this script does not need client internet access.
     The first-logon batch handoff calls this script before the existing
     C:\firstrun.bat workflow.
 
 .PARAMETER ShareRoot
-    UNC path to the MIST Drivers share.
+    UNC path to the Brume Drivers share.
 
 .PARAMETER Model
     Driver-pack folder under the share, for example Latitude-3440.
@@ -27,7 +27,7 @@ $ErrorActionPreference = 'Stop'
 $exitCode = 0
 $driveName = 'JOGDrivers'
 $transcriptStarted = $false
-$logDirectory = Join-Path $env:ProgramData 'MIST\logs'
+$logDirectory = Join-Path $env:ProgramData 'Brume\logs'
 $logPath = Join-Path $logDirectory 'first-logon-driver-install.log'
 
 try {
@@ -48,7 +48,7 @@ try {
     if ([string]::IsNullOrWhiteSpace($Model)) {
         $cs = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
         $Model = ($cs.Model.ToUpperInvariant() -replace '[^A-Z0-9]+', '-').Trim('-')
-        Write-Host "[MIST] Detected model folder: $Model"
+        Write-Host "[Brume] Detected model folder: $Model"
     }
     if ([string]::IsNullOrWhiteSpace($Model) -or
         $Model -in @('.', '..') -or
@@ -76,7 +76,7 @@ try {
     }
 
     # Stage the packs on the system drive because Dell extraction and pnputil use local files.
-    $stagingRoot = Join-Path $env:ProgramData 'MIST\drivers'
+    $stagingRoot = Join-Path $env:ProgramData 'Brume\drivers'
     $modelStaging = Join-Path $stagingRoot $Model
     New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
     if (Test-Path -LiteralPath $modelStaging) {
@@ -99,7 +99,7 @@ try {
             Copy-Item -Path (Join-Path $baseSource '*') -Destination $baseStaging -Recurse -Force
             $packFolders += $BasePack
         } else {
-            Write-Host "[MIST] Base driver pack not found: $ShareRoot\$BasePack"
+            Write-Host "[Brume] Base driver pack not found: $ShareRoot\$BasePack"
         }
     }
 
@@ -149,7 +149,7 @@ try {
     }
 } catch {
     # Return a failing status so the batch handoff does not continue to domain setup.
-    Write-Host "[MIST] $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "[Brume] $($_.Exception.Message)" -ForegroundColor Red
     $exitCode = 1
 } finally {
     # Remove the temporary SMB mapping but retain the local driver pack and log for inspection.

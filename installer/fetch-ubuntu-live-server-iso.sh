@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-# Download the official Ubuntu **26.04** Server live ISO (amd64) used with MIST autoinstall.
+# Download the official Ubuntu **26.04** Server live ISO (amd64) used with Brume autoinstall.
 # Pin: see installer/UBUNTU_RELEASE
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

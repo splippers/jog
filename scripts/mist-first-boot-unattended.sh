@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 exec 2>>/tmp/mist_error.log
-# One-shot first boot for Hyper-V / lab: configure first Ethernet as imaging NIC, MIST env, netplan,
+# One-shot first boot for Hyper-V / lab: configure first Ethernet as imaging NIC, Brume env, netplan,
 # full stack (EFI → tftpboot, dnsmasq, blocking native FOG). Skips interactive mist-install-wizard.
 
-log() { echo "[MIST-UNATTENDED] $*"; }
+log() { echo "[Brume-UNATTENDED] $*"; }
 
 [[ -f /etc/mist/unattended.active ]] || exit 0
 [[ -f /etc/mist/wizard.done ]] && exit 0
@@ -14,19 +14,19 @@ log() { echo "[MIST-UNATTENDED] $*"; }
 if command -v apt-get >/dev/null 2>&1; then
   DEBIAN_FRONTEND=noninteractive apt-get update -qq || log "WARNING: apt-get update failed (offline or no DNS?)"
   DEBIAN_FRONTEND=noninteractive apt-get install -y dialog dnsmasq git curl openssl xorriso python3 || \
-    log "WARNING: apt install of MIST prerequisites failed — check outbound HTTPS/DNS before static netplan"
+    log "WARNING: apt install of Brume prerequisites failed — check outbound HTTPS/DNS before static netplan"
 fi
 
-REPO="${MIST_REPO:-${JOG_REPO:-/opt/MIST}}"
+REPO="${Brume_REPO:-${JOG_REPO:-/opt/Brume}}"
 if [[ ! -x "${REPO}/install/mist-install.sh" ]]; then
-  log "MIST checkout missing — cloning into ${REPO}"
+  log "Brume checkout missing — cloning into ${REPO}"
   install -d "$(dirname "$REPO")"
   rm -rf "$REPO"
-  git clone --depth 1 https://github.com/splippers/MIST.git "$REPO" || \
+  git clone --depth 1 https://github.com/splippers/Brume.git "$REPO" || \
     { log "ERROR: git clone failed — need outbound HTTPS for github.com"; exit 1; }
 fi
 
-NETWORK_ENV="${MIST_UNATTEND_NETWORK_ENV:-${JOG_UNATTEND_NETWORK_ENV:-/etc/mist/unattended-network.env}}"
+NETWORK_ENV="${Brume_UNATTEND_NETWORK_ENV:-${JOG_UNATTEND_NETWORK_ENV:-/etc/mist/unattended-network.env}}"
 if [[ -r "$NETWORK_ENV" ]]; then
   # shellcheck disable=SC1090
   source "$NETWORK_ENV"
@@ -50,13 +50,13 @@ done < <(ip -br link show type ether | awk 'NR>1{print $1, $2}')
 
 [[ -n "$IFACE" ]] || { log "no ethernet iface; leaving unattended flag for manual fix"; exit 0; }
 
-IMAGING_IP="${MIST_UNATTEND_IMAGING_IP:-${JOG_UNATTEND_IMAGING_IP:-10.99.0.1}}"
-PREFIX="${MIST_UNATTEND_PREFIX:-${JOG_UNATTEND_PREFIX:-24}}"
-DHCP_START="${MIST_UNATTEND_DHCP_START:-${JOG_UNATTEND_DHCP_START:-10.99.0.100}}"
-DHCP_END="${MIST_UNATTEND_DHCP_END:-${JOG_UNATTEND_DHCP_END:-10.99.0.250}}"
-ROUTER="${MIST_UNATTEND_ROUTER:-${JOG_UNATTEND_ROUTER:-$IMAGING_IP}}"
-NEXT_SERVER="${MIST_UNATTEND_NEXT_SERVER:-${JOG_UNATTEND_NEXT_SERVER:-$IMAGING_IP}}"
-FOG_BOOTFILE="${MIST_UNATTEND_DHCP_BOOTFILE:-${JOG_UNATTEND_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
+IMAGING_IP="${Brume_UNATTEND_IMAGING_IP:-${JOG_UNATTEND_IMAGING_IP:-10.99.0.1}}"
+PREFIX="${Brume_UNATTEND_PREFIX:-${JOG_UNATTEND_PREFIX:-24}}"
+DHCP_START="${Brume_UNATTEND_DHCP_START:-${JOG_UNATTEND_DHCP_START:-10.99.0.100}}"
+DHCP_END="${Brume_UNATTEND_DHCP_END:-${JOG_UNATTEND_DHCP_END:-10.99.0.250}}"
+ROUTER="${Brume_UNATTEND_ROUTER:-${JOG_UNATTEND_ROUTER:-$IMAGING_IP}}"
+NEXT_SERVER="${Brume_UNATTEND_NEXT_SERVER:-${JOG_UNATTEND_NEXT_SERVER:-$IMAGING_IP}}"
+FOG_BOOTFILE="${Brume_UNATTEND_DHCP_BOOTFILE:-${JOG_UNATTEND_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
 NETMASK="${JOG_UNATTEND_NETMASK:-}"
 if ! NETMASK="$(python3 - "$IMAGING_IP" "$PREFIX" "$DHCP_START" "$DHCP_END" "$ROUTER" "$NEXT_SERVER" "$NETMASK" 2>&1 <<'PY'
 import ipaddress
@@ -70,7 +70,7 @@ try:
     interface = ipaddress.IPv4Interface(f"{address}/{prefix}")
     network = interface.network
     if interface.ip in (network.network_address, network.broadcast_address):
-        raise ValueError("MIST imaging IP must be a usable host address")
+        raise ValueError("Brume imaging IP must be a usable host address")
     pool_start = ipaddress.IPv4Address(start)
     pool_end = ipaddress.IPv4Address(end)
     if (pool_start not in network or pool_end not in network or pool_start > pool_end
@@ -78,7 +78,7 @@ try:
             or pool_end in (network.network_address, network.broadcast_address)):
         raise ValueError("DHCP pool must be an ascending range inside the imaging subnet")
     if pool_start <= interface.ip <= pool_end:
-        raise ValueError("DHCP pool must not include the MIST imaging IP")
+        raise ValueError("DHCP pool must not include the Brume imaging IP")
     gateway = ipaddress.IPv4Address(router)
     tftp = ipaddress.IPv4Address(next_server)
     if (gateway not in network or tftp not in network
@@ -149,5 +149,5 @@ fi
 touch /etc/mist/wizard.done
 rm -f /etc/mist/unattended.active
 systemctl disable mist-first-boot-unattended.service 2>/dev/null || true
-log "unattended MIST bootstrap complete (iface=${IFACE} imaging=${IMAGING_IP})."
+log "unattended Brume bootstrap complete (iface=${IFACE} imaging=${IMAGING_IP})."
 exit 0

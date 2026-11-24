@@ -1,6 +1,6 @@
-# MIST — multiple servers on a client-heavy network
+# Brume — multiple servers on a client-heavy network
 
-## What “connect multiple MIST servers” cannot mean (safely)
+## What “connect multiple Brume servers” cannot mean (safely)
 
 On **one broadcast domain (same VLAN / same dumb switch)**, you must **not** run **multiple independent DHCP servers** handing the same address pool. Clients will see conflicting offers; imaging becomes flaky.
 
@@ -8,7 +8,7 @@ On **one broadcast domain (same VLAN / same dumb switch)**, you must **not** run
 
 ### 1) **Split by physical imaging segments (recommended)**
 
-Deploy **one MIST per imaging switch / table / cable bundle**, each with:
+Deploy **one Brume per imaging switch / table / cable bundle**, each with:
 
 - its own **RFC1918 subnet** (e.g. `10.99.1.0/24`, `10.99.2.0/24`, …)
 - its own **USB uplink** to that segment only
@@ -21,11 +21,11 @@ Clients are partitioned **by wiring**, not by magic on one LAN.
 Run **one primary FOG** (MySQL + web + scheduler) and add **FOG storage nodes** so unicast imaging can fan out across disks and NICs. This is the supported way to **saturate disk I/O and NICs** without fighting DHCP.
 
 - Configure in the FOG UI: storage groups, replication, node bandwidth.
-- MIST laptops can act as **storage-only** hosts if you install the FOG storage node packages/roles there (advanced; usually a server-class node).
+- Brume laptops can act as **storage-only** hosts if you install the FOG storage node packages/roles there (advanced; usually a server-class node).
 
 See upstream: [FOG Project documentation](https://docs.fogproject.org/) and storage group guides on [fogproject.org](https://fogproject.org/).
 
-### 3) **Edge MIST + image sync (MIST helper)**
+### 3) **Edge Brume + image sync (Brume helper)**
 
 For “satellite” laptops that only need a **local copy of `/images`** and maybe a **local HTTP/TFTP mirror**, use:
 
@@ -36,15 +36,15 @@ Edges are **not** a second full FOG unless you intentionally run a second stack 
 
 ### 4) **Higher bandwidth before more heads**
 
-Often the cheapest win is **10GbE / LACP / better switch fabric** on one MIST before duplicating FOG.
+Often the cheapest win is **10GbE / LACP / better switch fabric** on one Brume before duplicating FOG.
 
 ## Cluster env file
 
 Copy `cluster/mist-node-role.env.example` to `/etc/mist/cluster.env` (the wizard can populate `JOG_CLUSTER_MODE` and `JOG_PRIMARY_SSH`).
 
-## Operational checklist (multi-MIST)
+## Operational checklist (multi-Brume)
 
-- [ ] Each MIST’s **USB-only DHCP** range is **non-overlapping** *or* only one DHCP server per L2 segment  
-- [ ] Each MIST **NEXT SERVER** points at the node that actually serves TFTP/HTTP for that segment  
+- [ ] Each Brume’s **USB-only DHCP** range is **non-overlapping** *or* only one DHCP server per L2 segment  
+- [ ] Each Brume **NEXT SERVER** points at the node that actually serves TFTP/HTTP for that segment  
 - [ ] FOG **image IDs** and API tokens line up if sharing one FOG across subnets (routing + firewall)  
 - [ ] Multicast: one session per VLAN; weak clients use JOS suicide clause so they do not throttle the room  

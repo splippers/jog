@@ -2,9 +2,9 @@
 set -euo pipefail
 umask 027
 
-JOG_ENV="${MIST_ENV:-${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
+JOG_ENV="${Brume_ENV:-${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
 FOG_ENV="${FOG_ENV:-/etc/mist/fog-api.env}"
-TFTP="${MIST_TFTP_ROOT:-${MIST_TFTP_ROOT:-${JOG_TFTP_ROOT:-/tftpboot}}}"
+TFTP="${Brume_TFTP_ROOT:-${Brume_TFTP_ROOT:-${JOG_TFTP_ROOT:-/tftpboot}}}"
 OUT="$TFTP/grub/default.cfg"
 MARKER=/run/mist-fog-task-active
 
@@ -15,8 +15,8 @@ set -a
 . "$FOG_ENV"
 set +a
 
-HOST_ID="${MIST_FOG_HOST_ID:-${MIST_FOG_HOST_ID:-${JOG_FOG_HOST_ID:-1}}}"
-HOST_IDS="${MIST_FOG_HOST_IDS:-${MIST_FOG_HOST_IDS:-${JOG_FOG_HOST_IDS:-$HOST_ID}}}"
+HOST_ID="${Brume_FOG_HOST_ID:-${Brume_FOG_HOST_ID:-${JOG_FOG_HOST_ID:-1}}}"
+HOST_IDS="${Brume_FOG_HOST_IDS:-${Brume_FOG_HOST_IDS:-${JOG_FOG_HOST_IDS:-$HOST_ID}}}"
 BASE="${JOG_FOG_API_URL:-}"
 API="${FOG_API_TOKEN:-}"
 USER="${FOG_USER_TOKEN:-}"

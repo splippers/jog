@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST — native FOG install (one-shot, after mist.env is ready)
+Description=Brume — native FOG install (one-shot, after mist.env is ready)
 After=network-online.target
 Wants=network-online.target
 

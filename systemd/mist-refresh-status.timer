@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST — periodic status refresh for kiosk
+Description=Brume — periodic status refresh for kiosk
 
 [Timer]
 OnBootSec=15

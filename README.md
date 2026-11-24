@@ -1,10 +1,10 @@
-# MIST — Mobile Imaging System Toolkit
+# Brume — Mobile Imaging System Toolkit
 
 A portable imaging appliance: an Ubuntu laptop running stock [FOG](https://fogproject.org) on an isolated
-imaging network (USB Ethernet), with a kiosk UI and a guided installer. MIST is **not** a FOG fork.
+imaging network (USB Ethernet), with a kiosk UI and a guided installer. Brume is **not** a FOG fork.
 
-MIST is the **server side**. The machines being imaged boot **[JOS](https://github.com/splippers/jos)**, a
-Secure Boot-compatible replacement for FOG's FOS, which MIST serves over PXE.
+Brume is the **server side**. The machines being imaged boot **[JOS](https://github.com/splippers/jos)**, a
+Secure Boot-compatible replacement for FOG's FOS, which Brume serves over PXE.
 
 ## The four repos
 
@@ -13,7 +13,7 @@ Secure Boot-compatible replacement for FOG's FOS, which MIST serves over PXE.
 | **mist** (this repo) | The imaging laptop: Ubuntu autoinstall, FOG install, DHCP/TFTP/nftables, kiosk, wizard, driver share, multicast profile, provisioning payload installer | the laptop (server) |
 | [jos](https://github.com/splippers/jos) | The client runtime: initrd build, GRUB menu generator, local-boot fallback, Secure Boot chain staging | the machine being imaged (client); staged by the server |
 | [jog-jos](https://github.com/splippers/jog-jos) | Integration: pins `mist` and `jos` together at known-good commits, combined docs, end-to-end tests | n/a |
-| [mistmetry](https://github.com/splippers/mistmetry) *(private)* | Android technician app and authenticated mobile API for monitoring and confirmed FOG task control | phone and MIST laptop |
+| [mistmetry](https://github.com/splippers/mistmetry) *(private)* | Android technician app and authenticated mobile API for monitoring and confirmed FOG task control | phone and Brume laptop |
 
 **Rule of thumb:** if it configures or installs something on the laptop, it belongs here. If it runs on, or
 builds for, the imaged machine, it belongs in `jos`. The technician app and its mobile API belong in
@@ -22,7 +22,7 @@ builds for, the imaged machine, it belongs in `jos`. The technician app and its 
 ## How they connect
 
 ```text
- imaged machine                          MIST laptop
+ imaged machine                          Brume laptop
  --------------                          ----------
  UEFI PXE ──DHCP/TFTP──────────────────▶ dnsmasq (mist)     serves shimx64.efi
  shim → grubnetx64 → signed kernel ◀──── /tftpboot/{grub,jos}/   staged by jos/scripts/jos-stage-boot.sh
@@ -30,7 +30,7 @@ builds for, the imaged machine, it belongs in `jos`. The technician app and its 
 ```
 
 `mist` installs the JOS staging script as `/usr/local/sbin/mist-stage-jos-boot.sh` (from a `jos` checkout,
-found via `$JOS_DIR`, a sibling `../jos`, or `/opt/MIST/jos`) and calls it during provisioning. MIST does not
+found via `$JOS_DIR`, a sibling `../jos`, or `/opt/Brume/jos`) and calls it during provisioning. Brume does not
 contain any JOS code.
 
 ## Corporate pipeline
@@ -63,7 +63,7 @@ take tens of minutes including reboots.
 | Post-FOG orchestration | `scripts/mist-post-fog-setup.sh` | Applies the profile after native FOG finishes |
 | QEMU workshop | `scripts/mist-qemu-workshop.sh` | Creates and runs Secure Boot UEFI test VMs with an isolated 100 GiB workspace budget |
 | Windows payload | `provisioner/windows/` | Orchestrator, drivers, domain/hybrid join, groups, BitLocker, status |
-| Post-download hook | `install/postdownload/mist-inject-provisioner.sh` | Copies the payload to `C:\ProgramData\MIST` |
+| Post-download hook | `install/postdownload/mist-inject-provisioner.sh` | Copies the payload to `C:\ProgramData\Brume` |
 
 ### Quick start (corporate)
 
@@ -116,13 +116,13 @@ Dell/HP catalog packs, extracts the INF trees, and writes `manifest.json`.
 
 ```bash
 sudo mist-doctor.sh
-sudo MIST_CORPORATE_STRICT=1 mist-doctor.sh
+sudo Brume_CORPORATE_STRICT=1 mist-doctor.sh
 sudo mist-multicast-tune.sh --check
 sudo mist-autojoin-setup.sh --check
 sudo mist-install-provisioner.sh --check
 ```
 
-On the device: `C:\ProgramData\MIST\Get-JOGProvisioningStatus.ps1`.
+On the device: `C:\ProgramData\Brume\Get-JOGProvisioningStatus.ps1`.
 
 ## Layout
 
@@ -147,7 +147,7 @@ Get both repos, then see the integration repo (`jog-jos`) for the end-to-end flo
 git clone --recurse-submodules https://github.com/splippers/jog-jos.git
 ```
 
-Build the JOS initrd with `jos/build/build-from-fos.sh`, install MIST with
+Build the JOS initrd with `jos/build/build-from-fos.sh`, install Brume with
 `sudo mist/install/mist-install.sh`, then stage with `sudo mist-stage-jos-boot.sh`.
 
 ## Documentation

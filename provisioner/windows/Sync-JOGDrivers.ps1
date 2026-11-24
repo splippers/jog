@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Upload a vendor driver pack to the MIST Samba driver share from a Windows workstation.
+    Upload a vendor driver pack to the Brume Samba driver share from a Windows workstation.
 
 .EXAMPLE
     .\Sync-JOGDrivers.ps1 -Source D:\Drivers\Latitude-3440 -Model Latitude-3440
@@ -42,7 +42,7 @@ try {
 }
 
 # Create a timestamped log and describe whether this run adds files or mirrors the source.
-$logDir = Join-Path $env:ProgramData 'MIST\logs'
+$logDir = Join-Path $env:ProgramData 'Brume\logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $log = Join-Path $logDir ('driver-sync-{0}.log' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 $script:JOGLogFile = $log

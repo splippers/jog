@@ -1,10 +1,10 @@
 # Driver share and driver sync
 
-The MIST appliance serves vendor driver packs to the Windows provisioner over SMB. The device pulls its
+The Brume appliance serves vendor driver packs to the Windows provisioner over SMB. The device pulls its
 model pack and the VMD base pack during the `DRIVERS` stage, before domain join.
 
 The pack list comes from FOG's hardware inventory, not from a hand-maintained list. A Windows 11
-workstation queries the read-only MIST model API, resolves the latest Dell/HP driver-pack catalog entry for
+workstation queries the read-only Brume model API, resolves the latest Dell/HP driver-pack catalog entry for
 each registered model, extracts the INF tree, and publishes it to the share.
 
 ## Layout
@@ -65,7 +65,7 @@ curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8089/api/models
 - Default endpoint: `http://192.168.254.1:8089/api/models` (the USB/workstation network).
 - The service binds `0.0.0.0:8089`; use `http://10.99.0.1:8089/api/models` from the imaging network.
 - Token file on the appliance: `/etc/mist/model-api.env` (0640 root:fogproject).
-- Token for the workstation: `C:\ProgramData\MIST\model-api.token`, or pass `-ApiToken`.
+- Token for the workstation: `C:\ProgramData\Brume\model-api.token`, or pass `-ApiToken`.
 - Retrieve the token on the appliance with `sudo mist-model-api-setup.sh --print-token`; do not commit it.
 - The API reads the FOG `inventory` table (`iSysman`, `iSysproduct`, `iSysversion`, `iMbproductname`) and
   returns distinct models that have checked in.
@@ -118,11 +118,11 @@ Useful switches:
 | `-Force` | Re-download even when the cache has the pack |
 | `-KeepDownloads` | Keep the multi-gigabyte vendor downloads for diagnosis |
 | `-Minimal` | Drop the large `video`/`audio` trees and Linux `.so` files |
-| `-WorkDir` | Cache/catalog/extract directory; default `%ProgramData%\MIST\driver-sync` |
+| `-WorkDir` | Cache/catalog/extract directory; default `%ProgramData%\Brume\driver-sync` |
 | `-OS` | `Windows11` (default), `Windows10`, or `Auto` |
 | `-Vendor` | `All`, `Dell`, `HP`, or `Lenovo` |
 
-The script logs to `%ProgramData%\MIST\logs\fog-driver-sync-*.log`.
+The script logs to `%ProgramData%\Brume\logs\fog-driver-sync-*.log`.
 
 ## Run the sync on the appliance
 

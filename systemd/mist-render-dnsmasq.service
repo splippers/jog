@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST — render dnsmasq USB-only imaging config
+Description=Brume — render dnsmasq USB-only imaging config
 
 [Service]
 Type=oneshot

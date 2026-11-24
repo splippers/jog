@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST FOG model inventory API
+Description=Brume FOG model inventory API
 Documentation=https://github.com/splippers/mist
 After=network-online.target mariadb.service
 Wants=network-online.target

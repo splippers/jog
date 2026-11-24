@@ -31,9 +31,9 @@ for arg in "$@"; do
 done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="${MIST_AUTOJOIN_SRC:-${JOG_AUTOJOIN_SRC:-$ROOT/scripts/mist-autojoin.php}}"
+SRC="${Brume_AUTOJOIN_SRC:-${JOG_AUTOJOIN_SRC:-$ROOT/scripts/mist-autojoin.php}}"
 [[ -f "$SRC" ]] || SRC=/usr/local/share/mist/scripts/mist-autojoin.php
-WEBROOT="${MIST_FOG_WEBROOT:-${JOG_FOG_WEBROOT:-/var/www/html/fog}}"
+WEBROOT="${Brume_FOG_WEBROOT:-${JOG_FOG_WEBROOT:-/var/www/html/fog}}"
 [[ -d "$WEBROOT/service" ]] || WEBROOT=/var/www/fog
 TARGET="$WEBROOT/service/mist-autojoin.php"
 ENV_FILE=/etc/mist/mist.env

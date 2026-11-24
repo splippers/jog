@@ -8,17 +8,17 @@
   "DomainNetbios": "CORP",
   "DomainJoin": {
     "Mode": "Credential",
-    "BlobPath": "C:\\ProgramData\\MIST\\domainjoin.blob",
+    "BlobPath": "C:\\ProgramData\\Brume\\domainjoin.blob",
     "User": "",
     "Password": "",
-    "OUPath": "OU=Workstations,OU=MIST,DC=corp,DC=example,DC=com"
+    "OUPath": "OU=Workstations,OU=Brume,DC=corp,DC=example,DC=com"
   },
   "HybridJoin": {
     "Enabled": true,
     "TimeoutMinutes": 30
   },
   "Groups": [
-    "MIST-Workstations",
+    "Brume-Workstations",
     "EndpointProtection",
     "DeviceEncryption"
   ],

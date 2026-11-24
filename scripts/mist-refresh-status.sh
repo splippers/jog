@@ -4,12 +4,12 @@ exec 2>>/tmp/mist_error.log
 
 # Writes a minimal HTML dashboard for the Chromium kiosk (extra tab).
 
-OUT_DIR="${MIST_STATUS_DIR:-${MIST_STATUS_DIR:-${JOG_STATUS_DIR:-/var/lib/mist/status}}}"
+OUT_DIR="${Brume_STATUS_DIR:-${Brume_STATUS_DIR:-${JOG_STATUS_DIR:-/var/lib/mist/status}}}"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/index.html"
 ln -sf index.html "$OUT_DIR/index"
 TMP="${OUT}.tmp"
-BATTERY_HELPER="${MIST_BATTERY_HELPER:-${MIST_BATTERY_HELPER:-${JOG_BATTERY_HELPER:-/usr/local/sbin/mist-battery.sh}}}"
+BATTERY_HELPER="${Brume_BATTERY_HELPER:-${Brume_BATTERY_HELPER:-${JOG_BATTERY_HELPER:-/usr/local/sbin/mist-battery.sh}}}"
 
 battery_html() {
   local raw=""
@@ -91,8 +91,8 @@ print("</div>")
 
 {
   echo "<!DOCTYPE html><html><head><meta charset='utf-8'><meta http-equiv='refresh' content='10'>"
-  echo "<title>MIST status</title><style>body{font-family:system-ui;margin:1rem;}pre{white-space:pre-wrap;background:#111;color:#eee;padding:1rem;border-radius:8px;}.battery-level{display:flex;align-items:center;gap:10px;margin:.5rem 0 1rem}.battery-bar{display:inline-block;width:240px;height:10px;border-radius:999px;background:#0b1118;border:1px solid #263544;overflow:hidden}.battery-bar i{display:block;height:100%;background:#35d1a4}.battery-bar.fair i{background:#ffc857}.battery-bar.poor i{background:#ff6b6b}.battery-kv{display:grid;max-width:560px;gap:6px}.battery-kv>div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px dashed #263544;padding-bottom:5px}.battery-kv>div>span:first-child{color:#9db0c2}.good{color:#35d1a4}.fair{color:#ffc857}.poor{color:#ff6b6b}.battery-note{color:#ffc857}</style></head><body>"
-  echo "<h1>MIST — imaging link + host</h1><p>Auto-refresh every 10s.</p>"
+  echo "<title>Brume status</title><style>body{font-family:system-ui;margin:1rem;}pre{white-space:pre-wrap;background:#111;color:#eee;padding:1rem;border-radius:8px;}.battery-level{display:flex;align-items:center;gap:10px;margin:.5rem 0 1rem}.battery-bar{display:inline-block;width:240px;height:10px;border-radius:999px;background:#0b1118;border:1px solid #263544;overflow:hidden}.battery-bar i{display:block;height:100%;background:#35d1a4}.battery-bar.fair i{background:#ffc857}.battery-bar.poor i{background:#ff6b6b}.battery-kv{display:grid;max-width:560px;gap:6px}.battery-kv>div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px dashed #263544;padding-bottom:5px}.battery-kv>div>span:first-child{color:#9db0c2}.good{color:#35d1a4}.fair{color:#ffc857}.poor{color:#ff6b6b}.battery-note{color:#ffc857}</style></head><body>"
+  echo "<h1>Brume — imaging link + host</h1><p>Auto-refresh every 10s.</p>"
 
   echo "<h2>Addresses</h2><pre>"
   ip -br addr 2>/dev/null || true

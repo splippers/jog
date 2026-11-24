@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST live imaging view (local API + kiosk page)
+Description=Brume live imaging view (local API + kiosk page)
 After=network-online.target apache2.service
 Wants=network-online.target
 

@@ -3,9 +3,9 @@ set -e
 exec 2>>/tmp/mist_error.log
 
 # Multi-tab Chromium on X11 (ozone/x11) for reliable kiosk on Intel iGPU laptops.
-# Requires /etc/mist/mist.env with MIST_FOG_URL and optional MIST_STATUS_URL.
+# Requires /etc/mist/mist.env with Brume_FOG_URL and optional Brume_STATUS_URL.
 
-JOG_ENV="${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
+JOG_ENV="${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
 [[ -f "$JOG_ENV" ]] || exit 0
 # shellcheck disable=SC1090
 source "$JOG_ENV"

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
-ERROR_LOG="${MIST_ERROR_LOG:-${JOG_ERROR_LOG:-${TMPDIR:-/tmp}}/mist-build-${UID}.log}"
+ERROR_LOG="${Brume_ERROR_LOG:-${JOG_ERROR_LOG:-${TMPDIR:-/tmp}}/mist-build-${UID}.log}"
 exec 2>>"$ERROR_LOG"
 # Build one Ubuntu Server Live ISO with embedded nocloud + autoinstall kernel args for Hyper-V Gen2 (UEFI).
-# Attach only this ISO to a new VM; installer runs unattended, then first-boot configures MIST without the wizard.
+# Attach only this ISO to a new VM; installer runs unattended, then first-boot configures Brume without the wizard.
 #
 # Requires: xorriso, openssl, sed (run ./fetch-ubuntu-live-server-iso.sh first if you lack the GA ISO).
 #
@@ -14,10 +14,10 @@ exec 2>>"$ERROR_LOG"
 # Env:
 #   SRC_ISO — override source ISO path (default: installer/ubuntu-<UBUNTU_RELEASE>-live-server-amd64.iso)
 #   OUT_ISO — output path (default: installer/ubuntu-<release>-live-server-mist-hyperv-amd64.iso)
-#   MIST_ERROR_LOG — override the per-user build log location
-#   MIST_UNATTEND_IFACE, MIST_UNATTEND_IMAGING_IP, MIST_UNATTEND_PREFIX,
-#   MIST_UNATTEND_DHCP_START, MIST_UNATTEND_DHCP_END, MIST_UNATTEND_ROUTER,
-#   MIST_UNATTEND_NEXT_SERVER — imaging network settings baked into the ISO.
+#   Brume_ERROR_LOG — override the per-user build log location
+#   Brume_UNATTEND_IFACE, Brume_UNATTEND_IMAGING_IP, Brume_UNATTEND_PREFIX,
+#   Brume_UNATTEND_DHCP_START, Brume_UNATTEND_DHCP_END, Brume_UNATTEND_ROUTER,
+#   Brume_UNATTEND_NEXT_SERVER — imaging network settings baked into the ISO.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALLER="${ROOT}/installer"
@@ -38,19 +38,19 @@ need openssl
 need sed
 need python3
 
-JOG_UNATTEND_IMAGING_IP="${MIST_UNATTEND_IMAGING_IP:-${JOG_UNATTEND_IMAGING_IP:-10.99.0.1}}"
-JOG_UNATTEND_PREFIX="${MIST_UNATTEND_PREFIX:-${JOG_UNATTEND_PREFIX:-24}}"
-JOG_UNATTEND_DHCP_START="${MIST_UNATTEND_DHCP_START:-${JOG_UNATTEND_DHCP_START:-10.99.0.100}}"
-JOG_UNATTEND_DHCP_END="${MIST_UNATTEND_DHCP_END:-${JOG_UNATTEND_DHCP_END:-10.99.0.250}}"
-JOG_UNATTEND_ROUTER="${MIST_UNATTEND_ROUTER:-${JOG_UNATTEND_ROUTER:-$JOG_UNATTEND_IMAGING_IP}}"
-JOG_UNATTEND_NEXT_SERVER="${MIST_UNATTEND_NEXT_SERVER:-${JOG_UNATTEND_NEXT_SERVER:-$JOG_UNATTEND_IMAGING_IP}}"
-JOG_UNATTEND_DHCP_BOOTFILE="${MIST_UNATTEND_DHCP_BOOTFILE:-${JOG_UNATTEND_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
+JOG_UNATTEND_IMAGING_IP="${Brume_UNATTEND_IMAGING_IP:-${JOG_UNATTEND_IMAGING_IP:-10.99.0.1}}"
+JOG_UNATTEND_PREFIX="${Brume_UNATTEND_PREFIX:-${JOG_UNATTEND_PREFIX:-24}}"
+JOG_UNATTEND_DHCP_START="${Brume_UNATTEND_DHCP_START:-${JOG_UNATTEND_DHCP_START:-10.99.0.100}}"
+JOG_UNATTEND_DHCP_END="${Brume_UNATTEND_DHCP_END:-${JOG_UNATTEND_DHCP_END:-10.99.0.250}}"
+JOG_UNATTEND_ROUTER="${Brume_UNATTEND_ROUTER:-${JOG_UNATTEND_ROUTER:-$JOG_UNATTEND_IMAGING_IP}}"
+JOG_UNATTEND_NEXT_SERVER="${Brume_UNATTEND_NEXT_SERVER:-${JOG_UNATTEND_NEXT_SERVER:-$JOG_UNATTEND_IMAGING_IP}}"
+JOG_UNATTEND_DHCP_BOOTFILE="${Brume_UNATTEND_DHCP_BOOTFILE:-${JOG_UNATTEND_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
 JOG_UNATTEND_IFACE="${JOG_UNATTEND_IFACE:-}"
 if [[ -n "$JOG_UNATTEND_IFACE" && ! "$JOG_UNATTEND_IFACE" =~ ^[a-zA-Z0-9_.:-]{1,15}$ ]]; then
-  log "invalid MIST_UNATTEND_IFACE: $JOG_UNATTEND_IFACE"
+  log "invalid Brume_UNATTEND_IFACE: $JOG_UNATTEND_IFACE"
   exit 1
 fi
-if ! MIST_UNATTEND_NETMASK="$(python3 - "$JOG_UNATTEND_IMAGING_IP" "$JOG_UNATTEND_PREFIX" "$JOG_UNATTEND_DHCP_START" "$JOG_UNATTEND_DHCP_END" "$JOG_UNATTEND_ROUTER" "$JOG_UNATTEND_NEXT_SERVER" "${JOG_UNATTEND_NETMASK:-}" 2>&1 <<'PY'
+if ! Brume_UNATTEND_NETMASK="$(python3 - "$JOG_UNATTEND_IMAGING_IP" "$JOG_UNATTEND_PREFIX" "$JOG_UNATTEND_DHCP_START" "$JOG_UNATTEND_DHCP_END" "$JOG_UNATTEND_ROUTER" "$JOG_UNATTEND_NEXT_SERVER" "${JOG_UNATTEND_NETMASK:-}" 2>&1 <<'PY'
 import ipaddress
 import sys
 
@@ -62,7 +62,7 @@ try:
     interface = ipaddress.IPv4Interface(f"{address}/{prefix}")
     network = interface.network
     if interface.ip in (network.network_address, network.broadcast_address):
-        raise ValueError("MIST imaging IP must be a usable host address")
+        raise ValueError("Brume imaging IP must be a usable host address")
     pool_start = ipaddress.IPv4Address(start)
     pool_end = ipaddress.IPv4Address(end)
     if (pool_start not in network or pool_end not in network or pool_start > pool_end
@@ -70,7 +70,7 @@ try:
             or pool_end in (network.network_address, network.broadcast_address)):
         raise ValueError("DHCP pool must be an ascending range inside the imaging subnet")
     if pool_start <= interface.ip <= pool_end:
-        raise ValueError("DHCP pool must not include the MIST imaging IP")
+        raise ValueError("DHCP pool must not include the Brume imaging IP")
     gateway = ipaddress.IPv4Address(router)
     tftp = ipaddress.IPv4Address(next_server)
     if (gateway not in network or tftp not in network
@@ -170,5 +170,5 @@ xorriso \
 [[ -s "$OUT_ISO" ]] || { log "output ISO missing or empty"; exit 1; }
 
 log "done: ${OUT_ISO}"
-log "imaging network: ${JOG_UNATTEND_IMAGING_IP}/${JOG_UNATTEND_PREFIX}, DHCP ${JOG_UNATTEND_DHCP_START}-${JOG_UNATTEND_DHCP_END}, iface ${MIST_UNATTEND_IFACE:-${JOG_UNATTEND_IFACE:-first detected Ethernet}}"
+log "imaging network: ${JOG_UNATTEND_IMAGING_IP}/${JOG_UNATTEND_PREFIX}, DHCP ${JOG_UNATTEND_DHCP_START}-${JOG_UNATTEND_DHCP_END}, iface ${Brume_UNATTEND_IFACE:-${JOG_UNATTEND_IFACE:-first detected Ethernet}}"
 ls -lh "$OUT_ISO"

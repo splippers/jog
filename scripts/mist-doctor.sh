@@ -1,15 +1,15 @@
 #!/bin/bash
-# Verify the Secure Boot PXE chain staged on this MIST: bootfile -> shim -> grub -> signed kernel -> JOS initrd.
+# Verify the Secure Boot PXE chain staged on this Brume: bootfile -> shim -> grub -> signed kernel -> JOS initrd.
 # Exit 0 only if every check passes. Safe to run any time; changes nothing.
-TFTP="${MIST_TFTP_ROOT:-${JOG_TFTP_ROOT:-/tftpboot}}"
+TFTP="${Brume_TFTP_ROOT:-${JOG_TFTP_ROOT:-/tftpboot}}"
 [[ -f /etc/mist/mist.env ]] && source /etc/mist/mist.env
-BOOTFILE="${MIST_DHCP_BOOTFILE:-${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
+BOOTFILE="${Brume_DHCP_BOOTFILE:-${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
 rc=0
 ok()   { echo "  ok    $*"; }
 bad()  { echo "  FAIL  $*"; rc=1; }
 signed() { sbverify --list "$1" 2>&1 | grep -q 'signature 1'; }
 
-echo "MIST doctor (tftp root: $TFTP)"
+echo "Brume doctor (tftp root: $TFTP)"
 if [[ ! -f "$TFTP/$BOOTFILE" ]]; then bad "bootfile $BOOTFILE missing"
 elif signed "$TFTP/$BOOTFILE"; then ok "bootfile $BOOTFILE is signed"
 else bad "bootfile $BOOTFILE is UNSIGNED — Secure Boot machines will refuse it (set JOG_DHCP_BOOTFILE=ubuntu-signed/shimx64.efi)"; fi
@@ -31,11 +31,11 @@ fi
 # doctor still passes on a plain imaging appliance.
 
 corp_bad() {
-  if [[ "${MIST_CORPORATE_STRICT:-${JOG_CORPORATE_STRICT:-0}}" == "1" ]]; then bad "$*"; else echo "  warn  $*"; fi
+  if [[ "${Brume_CORPORATE_STRICT:-${JOG_CORPORATE_STRICT:-0}}" == "1" ]]; then bad "$*"; else echo "  warn  $*"; fi
 }
 
 echo
-echo "MIST corporate pipeline"
+echo "Brume corporate pipeline"
 
 if command -v smbclient >/dev/null 2>&1; then ok "smbclient installed"; else corp_bad "smbclient not installed"; fi
 if command -v testparm >/dev/null 2>&1; then
@@ -44,7 +44,7 @@ if command -v testparm >/dev/null 2>&1; then
 else
   corp_bad "testparm not installed (Samba missing)"
 fi
-SHARE_PATH="${MIST_DRIVER_SHARE_PATH:-${JOG_DRIVER_SHARE_PATH:-/srv/mist/drivers}}"
+SHARE_PATH="${Brume_DRIVER_SHARE_PATH:-${JOG_DRIVER_SHARE_PATH:-/srv/mist/drivers}}"
 if [[ -d "$SHARE_PATH" ]]; then ok "driver share path $SHARE_PATH exists"
 else corp_bad "driver share path $SHARE_PATH missing"; fi
 if [[ -r /etc/mist/driver-share.env ]]; then ok "driver-share credentials generated"
@@ -60,7 +60,7 @@ else
   corp_bad "model API service not active (run mist-model-api-setup.sh --apply)"
 fi
 
-if [[ "${MIST_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-1}}" == "1" ]]; then
+if [[ "${Brume_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-1}}" == "1" ]]; then
   AUTOJOIN=/var/www/html/fog/service/mist-autojoin.php
   [[ -f "$AUTOJOIN" ]] || AUTOJOIN=/var/www/fog/service/mist-autojoin.php
   if [[ -f "$AUTOJOIN" ]]; then

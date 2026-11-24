@@ -3,7 +3,7 @@ set -euo pipefail
 umask 027
 exec 2>>/tmp/mist_error.log
 
-JOG_ENV="${MIST_ENV:-${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
+JOG_ENV="${Brume_ENV:-${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
 PORTAL_NETPLAN=/etc/netplan/90-mist-portal.yaml
 BACKHAUL_NETPLAN=/etc/netplan/91-mist-backhaul.yaml
 HOTSPOT_HOSTAPD=/etc/hostapd/mist-jogometry.conf
@@ -278,7 +278,7 @@ run_backhaul() {
   imaging=$(env_get JOG_USB_IFACE)
   hotspot=$(env_get JOG_HOTSPOT_IFACE)
   [[ "$iface" != "$imaging" ]] || fail "imaging NIC cannot be used as backhaul"
-  [[ "$iface" != "$hotspot" ]] || fail "MISTMETRY hotspot NIC cannot be used as backhaul"
+  [[ "$iface" != "$hotspot" ]] || fail "Brumetry hotspot NIC cannot be used as backhaul"
   case "$mode" in
     dhcp)
       backup "$BACKHAUL_NETPLAN"
@@ -346,7 +346,7 @@ EOF
 run_hotspot() {
   local iface ssid passphrase channel ip prefix start end mask imaging backhaul hostapd dnsmasq
   iface="${1:-}"
-  ssid="${2:-MISTMETRY}"
+  ssid="${2:-Brumetry}"
   passphrase="${3:-}"
   channel="${4:-6}"
   ip="${5:-192.168.254.1}"
@@ -400,7 +400,7 @@ EOF
   backup "$HOTSPOT_UNIT"
   write_stream "$HOTSPOT_UNIT" 0644 <<EOF
 [Unit]
-Description=MISTMETRY hidden hotspot
+Description=Brumetry hidden hotspot
 After=network.target
 
 [Service]
@@ -418,7 +418,7 @@ EOF
   backup "$HOTSPOT_DHCP_UNIT"
   write_stream "$HOTSPOT_DHCP_UNIT" 0644 <<EOF
 [Unit]
-Description=MISTMETRY hotspot DHCP
+Description=Brumetry hotspot DHCP
 After=mist-mistmetry-hotspot.service
 Requires=mist-mistmetry-hotspot.service
 
@@ -458,9 +458,9 @@ run_network_check() {
   require_usb_ethernet "$iface"
   [[ -z "$ip" ]] || require_ip "$ip"
   if [[ -n "$ip" ]]; then
-    JOG_IMAGING_IP="$ip" JOG_DHCP_PROBE_SECONDS="${MIST_DHCP_PROBE_SECONDS:-${MIST_DHCP_PROBE_SECONDS:-${JOG_DHCP_PROBE_SECONDS:-2}}}" "$GUARD" check "$iface" "$ip" >/tmp/mist-portal-dhcp-check.txt
+    JOG_IMAGING_IP="$ip" JOG_DHCP_PROBE_SECONDS="${Brume_DHCP_PROBE_SECONDS:-${Brume_DHCP_PROBE_SECONDS:-${JOG_DHCP_PROBE_SECONDS:-2}}}" "$GUARD" check "$iface" "$ip" >/tmp/mist-portal-dhcp-check.txt
   else
-    JOG_DHCP_PROBE_SECONDS="${MIST_DHCP_PROBE_SECONDS:-${MIST_DHCP_PROBE_SECONDS:-${JOG_DHCP_PROBE_SECONDS:-2}}}" "$GUARD" check "$iface" >/tmp/mist-portal-dhcp-check.txt
+    JOG_DHCP_PROBE_SECONDS="${Brume_DHCP_PROBE_SECONDS:-${Brume_DHCP_PROBE_SECONDS:-${JOG_DHCP_PROBE_SECONDS:-2}}}" "$GUARD" check "$iface" >/tmp/mist-portal-dhcp-check.txt
   fi
   current=$(tr '\n' ' ' </tmp/mist-portal-dhcp-check.txt)
   emit "ok=true" "iface=$iface" "detail=$current"
@@ -1114,7 +1114,7 @@ PY
       ;;
     create)
       valid_snapshot_name "$snap" || fail "invalid checkpoint name"
-      virsh snapshot-create-as --domain "$name" --name "$snap" --description "MIST portal checkpoint" --disk-only --atomic >/dev/null
+      virsh snapshot-create-as --domain "$name" --name "$snap" --description "Brume portal checkpoint" --disk-only --atomic >/dev/null
       ;;
     revert|restore)
       valid_snapshot_name "$snap" || fail "invalid checkpoint name"
@@ -1162,7 +1162,7 @@ vm_console() {
   vm_exists "$name" || fail "domain not found: $name"
   display=$(virsh domdisplay --domain "$name" 2>/dev/null || true)
   [[ -n "$display" ]] || fail "no VNC display assigned to $name; start the VM first"
-  JOG_VNC_HOST="${MIST_VNC_HOST:-${MIST_VNC_HOST:-${JOG_VNC_HOST:-10.42.0.1}}}" python3 - "$name" "$display" <<'PY'
+  JOG_VNC_HOST="${Brume_VNC_HOST:-${Brume_VNC_HOST:-${JOG_VNC_HOST:-10.42.0.1}}}" python3 - "$name" "$display" <<'PY'
 import json
 import os
 import re
@@ -1190,7 +1190,7 @@ with open(tmp, "w") as handle:
     handle.write("\n".join(lines) + "\n")
 os.chmod(tmp, 0o600)
 os.replace(tmp, target_file)
-host = os.environ.get("MIST_VNC_HOST", os.environ.get("MIST_VNC_HOST", os.environ.get("JOG_VNC_HOST", "10.42.0.1")))
+host = os.environ.get("Brume_VNC_HOST", os.environ.get("Brume_VNC_HOST", os.environ.get("JOG_VNC_HOST", "10.42.0.1")))
 url = "https://%s:6080/vnc.html?autoconnect=1&reconnect=1&resize=scale&path=websockify%%3Ftoken%%3D%s" % (host, name)
 print(json.dumps({"ok": True, "name": name, "display": display, "host": "127.0.0.1", "port": port, "token": name, "url": url, "targets": target_file}))
 PY
@@ -3197,7 +3197,7 @@ import os
 import urllib.error
 import urllib.request
 
-base = os.environ.get("MIST_FOG_API_URL", os.environ.get("MIST_FOG_API_URL", os.environ.get("JOG_FOG_API_URL", ""))).rstrip("/")
+base = os.environ.get("Brume_FOG_API_URL", os.environ.get("Brume_FOG_API_URL", os.environ.get("JOG_FOG_API_URL", ""))).rstrip("/")
 api = os.environ.get("FOG_API_TOKEN", "")
 user = os.environ.get("FOG_USER_TOKEN", "")
 host, task_type, image, shutdown = __import__("sys").argv[1:5]

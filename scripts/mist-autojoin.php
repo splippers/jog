@@ -1,6 +1,6 @@
 <?php
 /**
- * MIST auto-join endpoint.
+ * Brume auto-join endpoint.
  *
  * Called by the JOS default PXE entry (jos-taskcheck.sh) after DHCP is up and
  * before the normal FOG host-key/hostinfo handshake. It does one thing:
@@ -77,7 +77,7 @@ function mist_autojoin_register($mac)
 
     $primary = $macs[0];
     $suffix = strtolower(str_replace([':', '-', '.'], '', $primary));
-    $name = 'MIST-' . substr($suffix, -8);
+    $name = 'Brume-' . substr($suffix, -8);
 
     // A legacy record may already hold the generated name. Keep trying
     // rather than failing the whole first-boot flow on a name collision.
@@ -94,7 +94,7 @@ function mist_autojoin_register($mac)
         ->set('name', $name)
         ->set(
             'description',
-            sprintf('Auto-registered by MIST autojoin on %s', date('Y-m-d H:i:s'))
+            sprintf('Auto-registered by Brume autojoin on %s', date('Y-m-d H:i:s'))
         )
         ->set('modules', $modules);
     foreach ($macs as $address) {

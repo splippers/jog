@@ -1,5 +1,5 @@
 #cloud-config
-# MIST — single Hyper-V DVD (embedded nocloud). See installer/build-hyperv-single-iso.sh
+# Brume — single Hyper-V DVD (embedded nocloud). See installer/build-hyperv-single-iso.sh
 autoinstall:
   version: 1
   locale: en_US.UTF-8
@@ -31,8 +31,8 @@ autoinstall:
     layout:
       name: direct
   late-commands:
-    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 https://github.com/splippers/MIST.git /opt/MIST || (cd /opt/MIST && git pull --ff-only || true)'
-    - curtin in-target --target=/target -- env MIST_SKIP_SYSTEMD=1 bash /opt/MIST/install/mist-install.sh || true
+    - curtin in-target --target=/target -- bash -lc 'git clone --depth 1 https://github.com/splippers/Brume.git /opt/Brume || (cd /opt/Brume && git pull --ff-only || true)'
+    - curtin in-target --target=/target -- env Brume_SKIP_SYSTEMD=1 bash /opt/Brume/install/mist-install.sh || true
     # Bundled on this ISO (see installer/build-hyperv-single-iso.sh) so the remaster works before GitHub main contains these files.
     - curtin in-target --target=/target -- install -m 0755 /cdrom/installer-extra/mist-first-boot-unattended.sh /usr/local/bin/mist-first-boot-unattended.sh
     - curtin in-target --target=/target -- install -m 0644 /cdrom/installer-extra/mist-first-boot-unattended.service /etc/systemd/system/mist-first-boot-unattended.service

@@ -9,7 +9,7 @@ exec 2>>/tmp/mist_error.log
 # LAN, this script closes them again and re-opens only the imaging NIC (see "firewall" below).
 # Requires /etc/mist/mist.env with imaging NIC + IPs. Run as root after mist-install-wizard (or equivalent).
 #
-# MIST uses dnsmasq for DHCP only; FOG owns TFTP (UDP/69). See scripts/mist-render-dnsmasq.sh.
+# Brume uses dnsmasq for DHCP only; FOG owns TFTP (UDP/69). See scripts/mist-render-dnsmasq.sh.
 #
 # Env (optional):
 #   FOG_HOME (/opt/fog), FOG_SRC (/opt/fogproject), FOG_GIT_URL, FOG_GIT_REF — install dir and git source
@@ -20,7 +20,7 @@ exec 2>>/tmp/mist_error.log
   exit 1
 }
 
-JOG_ENV="${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
+JOG_ENV="${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
 [[ -f "$JOG_ENV" ]] || {
   echo "Missing $JOG_ENV — configure imaging network first." >&2
   exit 1
@@ -28,7 +28,7 @@ JOG_ENV="${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
 # shellcheck disable=SC1090
 source "$JOG_ENV"
 
-JOG_REPO="${MIST_REPO:-${JOG_REPO:-/opt/MIST}}"
+JOG_REPO="${Brume_REPO:-${JOG_REPO:-/opt/Brume}}"
 if [[ -f "${JOG_REPO}/.env" ]]; then
   set -a
   # shellcheck disable=SC1091
@@ -36,7 +36,7 @@ if [[ -f "${JOG_REPO}/.env" ]]; then
   set +a
 fi
 
-: "${JOG_USB_IFACE:?Set MIST_USB_IFACE in $JOG_ENV}"
+: "${JOG_USB_IFACE:?Set Brume_USB_IFACE in $JOG_ENV}"
 : "${JOG_IMAGING_IP:?}"
 : "${JOG_IMAGING_PREFIX:?}"
 : "${JOG_DHCP_ROUTER:?}"
@@ -102,7 +102,7 @@ export sendreports="${FOG_SEND_REPORTS:-N}"
 export installlang="0"
 export installtype="N"
 
-log "starting FOG installfog.sh -Y (no FOG DHCP — use MIST dnsmasq + next-server)"
+log "starting FOG installfog.sh -Y (no FOG DHCP — use Brume dnsmasq + next-server)"
 cd "${FOG_SRC}/bin"
 ./installfog.sh -Y
 

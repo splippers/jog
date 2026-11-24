@@ -1,15 +1,15 @@
-# MIST — ISO-based install (**Ubuntu 26.04 LTS**)
+# Brume — ISO-based install (**Ubuntu 26.04 LTS**)
 
-MIST is pinned to **Ubuntu Server 26.04** (`installer/UBUNTU_RELEASE`). Use the **live-server** amd64 image from [releases.ubuntu.com/26.04](https://releases.ubuntu.com/26.04/) (file name: `ubuntu-26.04-live-server-amd64.iso`).
+Brume is pinned to **Ubuntu Server 26.04** (`installer/UBUNTU_RELEASE`). Use the **live-server** amd64 image from [releases.ubuntu.com/26.04](https://releases.ubuntu.com/26.04/) (file name: `ubuntu-26.04-live-server-amd64.iso`).
 
 | Goal | Use | After install |
 |------|-----|---------------|
 | **VM, one DVD, hands-off lab** | [Hyper-V one ISO](#hyper-v-gen2-one-iso-embedded-nocloud) | Unattended first-boot; optional **`mist-setup-reliable-kiosk.sh`** ([§ After reboot](#after-the-vm-reboots)) |
 | **Full wizard (USB NIC, etc.)** | [Two ISOs + `autoinstall`](#vm-boot-wizard-end-to-end-two-isos-recommended) | **`mist-install-wizard`**, FOG, then **`mist-setup-reliable-kiosk.sh`** ([§ Graphical kiosk](#graphical-session-autologin-fog-management-tab-x11-latitude-class-laptops)) |
 
-MIST ships two layers:
+Brume ships two layers:
 
-1. **Unattended base OS** — autoinstall (`installer/autoinstall/`) installs dnsmasq, git, clones MIST to `/opt/MIST`, and drops helper units.
+1. **Unattended base OS** — autoinstall (`installer/autoinstall/`) installs dnsmasq, git, clones Brume to `/opt/Brume`, and drops helper units.
 2. **Interactive network + FOG** — after reboot, run **`sudo mist-install-wizard`** (dialog TUI). That runs **`mist-provision-stack.sh`** (signed EFI under **`/tftpboot/ubuntu-signed/`**, dnsmasq, native FOG in the background). `/etc/profile.d/mist-remind.sh` reflects **`wizard.done`** and **`fog-native.done`**.
 
 Canonical reference (same major): [Autoinstall quick start](https://ubuntu.com/server/docs/install/autoinstall-quickstart) and Subiquity docs: [Providing autoinstall configuration](https://canonical-subiquity.readthedocs-hosted.com/en/latest/tutorial/providing-autoinstall.html).
@@ -18,7 +18,7 @@ Canonical reference (same major): [Autoinstall quick start](https://ubuntu.com/s
 
 Use this when you want **`sudo mist-install-wizard`** after install (pick **`enx…`** USB NIC, IPs, DHCP, confirm onboard NIC if needed).
 
-**1.** From the **`MIST` repo root on your build machine:
+**1.** From the **`Brume` repo root on your build machine:
 
 ```bash
 sudo apt update
@@ -46,9 +46,9 @@ sudo apt install -y cloud-image-utils xorriso openssl curl
 
 Use this when you attach **exactly one** virtual DVD (no second CIDATA disc) to a **Generation 2** VM.
 
-### Build the ISO (run on any machine with the MIST repo)
+### Build the ISO (run on any machine with the Brume repo)
 
-From the **`MIST` repo root**:
+From the **`Brume` repo root**:
 
 ```bash
 sudo apt update
@@ -103,7 +103,7 @@ Autoinstall cannot know your **USB NIC name**, **safe IP ranges** beside a corpo
 
 ## 1) Download the 26.04 live-server ISO
 
-From the MIST repo:
+From the Brume repo:
 
 ```bash
 ./installer/fetch-ubuntu-live-server-iso.sh
@@ -136,7 +136,7 @@ Produces **`installer/mist-autoinstall-seed.iso`**. If `cloud-localds` is instal
 If you just want to regenerate both ISO files in one go:
 
 ```bash
-cd /mnt/EDDIE-SANDIEGO/Projects/MIST
+cd /mnt/EDDIE-SANDIEGO/Projects/Brume
 sudo apt update
 sudo apt install -y cloud-image-utils xorriso openssl curl
 ./installer/fetch-ubuntu-live-server-iso.sh

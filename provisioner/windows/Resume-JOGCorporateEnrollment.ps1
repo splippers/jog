@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Finish MIST provisioning on a device that was imaged on the air-gapped
+    Finish Brume provisioning on a device that was imaged on the air-gapped
     network.
 
 .DESCRIPTION
@@ -68,7 +68,7 @@ if ($joinMode -notin @('Offline', 'Credential')) {
     exit 1
 }
 
-Write-Host 'MIST corporate enrollment resume' -ForegroundColor Cyan
+Write-Host 'Brume corporate enrollment resume' -ForegroundColor Cyan
 Write-Host "  device : $env:COMPUTERNAME"
 Write-Host "  domain : $domain"
 Write-Host "  mode   : $mode"

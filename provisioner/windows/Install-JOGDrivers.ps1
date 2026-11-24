@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Stage: pull the model driver pack from the MIST Samba share and install it with pnputil.
+    Stage: pull the model driver pack from the Brume Samba share and install it with pnputil.
 #>
 [CmdletBinding()]
 param(
@@ -68,7 +68,7 @@ if (-not $mapped) {
     return (New-JOGResult $false $false "Cannot map $unc as $user")
 }
 
-$staging = Join-Path $env:ProgramData 'MIST\drivers'
+$staging = Join-Path $env:ProgramData 'Brume\drivers'
 $robolog = Join-Path (Split-Path -Parent $LogFile) 'robocopy-drivers.log'
 $selected = @()
 

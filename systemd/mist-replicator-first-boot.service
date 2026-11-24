@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST replicator first boot specialization
+Description=Brume replicator first boot specialization
 ConditionPathExists=/etc/mist/replicator.generic
 After=network-online.target systemd-user-sessions.service
 Wants=network-online.target

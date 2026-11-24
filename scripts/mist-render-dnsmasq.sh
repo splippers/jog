@@ -3,12 +3,12 @@ set -euo pipefail
 exec 2>>/tmp/mist_error.log
 
 ERROR_LOG="/tmp/mist_error.log"
-log() { echo "MIST-DNSMASQ: $*"; }
-err() { echo "MIST-DNSMASQ-ERROR: $*" | tee -a "$ERROR_LOG" >&2; }
+log() { echo "Brume-DNSMASQ: $*"; }
+err() { echo "Brume-DNSMASQ-ERROR: $*" | tee -a "$ERROR_LOG" >&2; }
 
-JOG_ENV="${MIST_ENV:-${MIST_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
+JOG_ENV="${Brume_ENV:-${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}}"
 if [[ ! -f "$JOG_ENV" ]]; then
-  err "Missing $JOG_ENV (copy from MIST/config/mist.env.example)"
+  err "Missing $JOG_ENV (copy from Brume/config/mist.env.example)"
   exit 1
 fi
 # shellcheck disable=SC1090
@@ -25,7 +25,7 @@ source "$JOG_ENV"
 OUT="${1:-/etc/dnsmasq.d/99-mist-imaging.conf}"
 mkdir -p "$(dirname "$OUT")"
 
-GUARD="${MIST_DHCP_GUARD:-${MIST_DHCP_GUARD:-${JOG_DHCP_GUARD:-/usr/local/bin/mist-dhcp-guard.py}}}"
+GUARD="${Brume_DHCP_GUARD:-${Brume_DHCP_GUARD:-${JOG_DHCP_GUARD:-/usr/local/bin/mist-dhcp-guard.py}}}"
 IFACE="$JOG_USB_IFACE"
 DHCP_IFACE="$IFACE"
 if [[ -e "/sys/class/net/$IFACE/brport/bridge" ]]; then
@@ -81,7 +81,7 @@ log "DHCP probe: ${PROBE_OUTPUT//$'\n'/ }"
   echo "dhcp-option=option:dns-server,${JOG_NEXT_SERVER}"
   UPSTREAM_DNS="${JOG_UPSTREAM_DNS:-}"
   if [[ -z "$UPSTREAM_DNS" ]]; then
-    UPSTREAM_DNS=$(python3 - "${MIST_BACKHAUL_IFACE:-${MIST_BACKHAUL_IFACE:-${JOG_BACKHAUL_IFACE:-wlp0s20f3}}}" <<'PYDNS'
+    UPSTREAM_DNS=$(python3 - "${Brume_BACKHAUL_IFACE:-${Brume_BACKHAUL_IFACE:-${JOG_BACKHAUL_IFACE:-wlp0s20f3}}}" <<'PYDNS'
 import subprocess, sys
 try:
     out = subprocess.run(["resolvectl", "dns", sys.argv[1]], capture_output=True, text=True, timeout=3).stdout
@@ -99,7 +99,7 @@ PYDNS
   done
   echo
   echo "dhcp-option=option:tftp-server,${JOG_NEXT_SERVER}"
-  BOOTFILE="${MIST_DHCP_BOOTFILE:-${MIST_DHCP_BOOTFILE:-${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}}"
+  BOOTFILE="${Brume_DHCP_BOOTFILE:-${Brume_DHCP_BOOTFILE:-${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}}"
   BOOTSIZE=$(stat -c %s "/tftpboot/$BOOTFILE" 2>/dev/null || echo 0)
   BOOTBLOCKS=$(( (BOOTSIZE + 511) / 512 ))
   echo "dhcp-option=13,$BOOTBLOCKS"

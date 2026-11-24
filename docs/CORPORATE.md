@@ -1,4 +1,4 @@
-# Corporate pipeline on the MIST appliance
+# Corporate pipeline on the Brume appliance
 
 This is the appliance-side runbook. The Windows-side state machine and the full design are in
 [`jog-jos/docs/CORPORATE-PROVISIONING.md`](https://github.com/splippers/jog-jos/blob/main/docs/CORPORATE-PROVISIONING.md).
@@ -16,10 +16,10 @@ PXE → JOS → FOG multicast → image written
                                │
                                ▼
               /images/postdownloadscripts/mist-inject-provisioner.sh
-              copies C:\ProgramData\MIST\* and SetupComplete.cmd
+              copies C:\ProgramData\Brume\* and SetupComplete.cmd
                                │
                                ▼
-              Windows first boot → MISTProvisioning state machine
+              Windows first boot → BrumeProvisioning state machine
 ```
 
 The appliance provides:
@@ -39,7 +39,7 @@ The appliance provides:
 
 ## 2. Prerequisites
 
-- MIST installed and native FOG finished (`/etc/mist/fog-native.done`).
+- Brume installed and native FOG finished (`/etc/mist/fog-native.done`).
 - `/etc/mist/mist.env` has the imaging NIC and IPs finalised.
 - Driver packs synced from the FOG model inventory — see [`DRIVERS.md`](DRIVERS.md). The Windows
   workstation needs internet access to the Dell/HP catalogs; the appliance does not.
@@ -82,7 +82,7 @@ sudo mist-corporate-setup.sh
 It writes `/etc/mist/provisioning.env` (0600) and, if enabled, runs the payload installer. The fields are
 documented in [`config/mist-provisioning.env.example`](../config/mist-provisioning.env.example).
 
-The non-interactive defaults use `corp.example.com`, `OU=Workstations,OU=MIST,DC=corp,DC=example,DC=com`,
+The non-interactive defaults use `corp.example.com`, `OU=Workstations,OU=Brume,DC=corp,DC=example,DC=com`,
 and the example group list. Replace those with the real AD values before a device resumes enrollment;
 the air-gapped handoff uses the domain and OU from this config. Re-run
 `sudo mist-install-provisioner.sh` after editing so newly imaged devices receive the updated payload.
@@ -185,7 +185,7 @@ sudo mist-post-fog-setup.sh
 sudo mist-doctor.sh
 
 # Strict corporate checks
-sudo MIST_CORPORATE_STRICT=1 mist-doctor.sh
+sudo Brume_CORPORATE_STRICT=1 mist-doctor.sh
 
 # Share read/write as the two accounts
 smbclient //127.0.0.1/Drivers -U 'drivers%<password>' -c 'ls'
@@ -208,9 +208,9 @@ sudo mist-install-provisioner.sh --check
 On the imaged device, after first boot:
 
 ```powershell
-C:\ProgramData\MIST\Get-JOGProvisioningStatus.ps1
-Get-Content C:\ProgramData\MIST\Provisioning.json
-Get-ChildItem C:\ProgramData\MIST\logs
+C:\ProgramData\Brume\Get-JOGProvisioningStatus.ps1
+Get-Content C:\ProgramData\Brume\Provisioning.json
+Get-ChildItem C:\ProgramData\Brume\logs
 ```
 
 Expected end state after imaging is `State: AWAITING_CORPORATE` with the desktop handoff shortcut. After
@@ -233,8 +233,8 @@ recovery password visible in AD under the computer object's `msFVE-RecoveryInfor
 | `HYBRID_JOIN_PENDING` | `dsregcmd /status`; SCP, DNS, `enterpriseregistration.windows.net` |
 | `GROUPS_PENDING` | Offline join: run `Add-JOGComputerGroups.ps1` from a management host |
 | `BITLOCKER_PENDING` | TPM ready? GPO allows BitLocker? AD escrow permitted? |
-| No `C:\ProgramData\MIST` after imaging | Did the post-download hook run? Check the FOG task log for `[mist-inject]` |
-| Provisioner not resuming | `Get-ScheduledTask MISTProvisioning`; the task runs at startup as SYSTEM |
+| No `C:\ProgramData\Brume` after imaging | Did the post-download hook run? Check the FOG task log for `[mist-inject]` |
+| Provisioner not resuming | `Get-ScheduledTask BrumeProvisioning`; the task runs at startup as SYSTEM |
 
 ---
 

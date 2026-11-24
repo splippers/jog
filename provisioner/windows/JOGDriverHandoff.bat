@@ -8,20 +8,20 @@ set "DRIVER_SHARE=\\10.99.0.1\Drivers"
 
 rem Require the companion installer before starting the handoff.
 if not exist "%DRIVER_SCRIPT%" (
-    echo [MIST] Missing driver installer: "%DRIVER_SCRIPT%"
+    echo [Brume] Missing driver installer: "%DRIVER_SCRIPT%"
     exit /b 2
 )
 
-rem Install drivers while the device is still connected to the isolated MIST network.
+rem Install drivers while the device is still connected to the isolated Brume network.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%DRIVER_SCRIPT%" -ShareRoot "%DRIVER_SHARE%"
 if errorlevel 1 (
-    echo [MIST] Driver installation failed. The existing first-run flow was not started.
+    echo [Brume] Driver installation failed. The existing first-run flow was not started.
     exit /b 1
 )
 
 rem Hand control to the existing root-level first-run script after driver installation succeeds.
 if not exist "C:\firstrun.bat" (
-    echo [MIST] Missing C:\firstrun.bat; driver installation succeeded, but setup cannot continue.
+    echo [Brume] Missing C:\firstrun.bat; driver installation succeeded, but setup cannot continue.
     exit /b 3
 )
 

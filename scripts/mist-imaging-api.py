@@ -15,11 +15,11 @@ import urllib.request
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-ENV_FILE = os.environ.get("MIST_FOG_API_ENV", os.environ.get("JOG_FOG_API_ENV", "/etc/mist/fog-api.env" if os.path.exists("/etc/mist/fog-api.env") else "/etc/mist/fog-api.env"))
-JOG_ENV_FILE = os.environ.get("MIST_ENV_FILE", os.environ.get("JOG_ENV_FILE", "/etc/mist/mist.env" if os.path.exists("/etc/mist/mist.env") else "/etc/mist/mist.env"))
-STATIC = os.environ.get("MIST_IMAGING_STATIC", os.environ.get("JOG_IMAGING_STATIC", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "kiosk", "imaging")))
-HELPER = os.environ.get("MIST_PORTAL_HELPER", os.environ.get("JOG_PORTAL_HELPER", "/usr/local/sbin/mist-portal-network.sh" if os.path.exists("/usr/local/sbin/mist-portal-network.sh") else "/usr/local/sbin/mist-portal-network.sh"))
-BUILD_STATUS_FILE = os.environ.get("MIST_REPLICATOR_BUILD_STATUS", os.environ.get("JOG_REPLICATOR_BUILD_STATUS", "/var/www/html/mist-replicator-build.status" if os.path.exists("/var/www/html/mist-replicator-build.status") else "/var/www/html/mist-replicator-build.status"))
+ENV_FILE = os.environ.get("Brume_FOG_API_ENV", os.environ.get("JOG_FOG_API_ENV", "/etc/mist/fog-api.env" if os.path.exists("/etc/mist/fog-api.env") else "/etc/mist/fog-api.env"))
+JOG_ENV_FILE = os.environ.get("Brume_ENV_FILE", os.environ.get("JOG_ENV_FILE", "/etc/mist/mist.env" if os.path.exists("/etc/mist/mist.env") else "/etc/mist/mist.env"))
+STATIC = os.environ.get("Brume_IMAGING_STATIC", os.environ.get("JOG_IMAGING_STATIC", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "kiosk", "imaging")))
+HELPER = os.environ.get("Brume_PORTAL_HELPER", os.environ.get("JOG_PORTAL_HELPER", "/usr/local/sbin/mist-portal-network.sh" if os.path.exists("/usr/local/sbin/mist-portal-network.sh") else "/usr/local/sbin/mist-portal-network.sh"))
+BUILD_STATUS_FILE = os.environ.get("Brume_REPLICATOR_BUILD_STATUS", os.environ.get("JOG_REPLICATOR_BUILD_STATUS", "/var/www/html/mist-replicator-build.status" if os.path.exists("/var/www/html/mist-replicator-build.status") else "/var/www/html/mist-replicator-build.status"))
 
 VM_NAME_RE = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
 SNAPSHOT_RE = re.compile(r"[A-Za-z0-9_.-]{1,63}")
@@ -60,12 +60,12 @@ def _webhook_url():
     global _WEBHOOK_ENV
     if _WEBHOOK_ENV is None:
         env = load_env(JOG_ENV_FILE)
-        env.update({k: v for k, v in os.environ.items() if k.startswith("JOG_") or k.startswith("MIST_")})
+        env.update({k: v for k, v in os.environ.items() if k.startswith("JOG_") or k.startswith("Brume_")})
         _WEBHOOK_ENV = env
-    return (_WEBHOOK_ENV.get("MIST_WEBHOOK_URL") or _WEBHOOK_ENV.get("MIST_DISCORD_WEBHOOK_URL") or _WEBHOOK_ENV.get("JOG_WEBHOOK_URL") or _WEBHOOK_ENV.get("JOG_DISCORD_WEBHOOK_URL") or "").strip()
+    return (_WEBHOOK_ENV.get("Brume_WEBHOOK_URL") or _WEBHOOK_ENV.get("Brume_DISCORD_WEBHOOK_URL") or _WEBHOOK_ENV.get("JOG_WEBHOOK_URL") or _WEBHOOK_ENV.get("JOG_DISCORD_WEBHOOK_URL") or "").strip()
 
 
-AUDIT_LOG = os.environ.get("MIST_AUDIT_LOG", os.environ.get("JOG_AUDIT_LOG", "/var/log/mist/audit.jsonl" if os.path.isdir("/var/log/mist") else "/var/log/mist/audit.jsonl"))
+AUDIT_LOG = os.environ.get("Brume_AUDIT_LOG", os.environ.get("JOG_AUDIT_LOG", "/var/log/mist/audit.jsonl" if os.path.isdir("/var/log/mist") else "/var/log/mist/audit.jsonl"))
 
 
 def audit_write(event, detail=None, ok=True):
@@ -93,7 +93,7 @@ def preflight(kind, vm=None, host_id=None, image_id=None):
     # DHCP safety
     try:
         env = load_env(JOG_ENV_FILE)
-        nic = env.get("MIST_IMAGING_NIC", env.get("JOG_IMAGING_NIC", "enx34298f79151f"))
+        nic = env.get("Brume_IMAGING_NIC", env.get("JOG_IMAGING_NIC", "enx34298f79151f"))
         conf = "/etc/dnsmasq.d/99-mist-imaging.conf"
         txt = open(conf, encoding="utf-8", errors="replace").read() if os.path.exists(conf) else ""
         ok = f"interface={nic}" in txt and "dhcp-range=" in txt
@@ -102,7 +102,7 @@ def preflight(kind, vm=None, host_id=None, image_id=None):
         add("dhcp:scoped", False, str(e))
     # TFTP/UEFI
     for p in ("/tftpboot/ipxe.pxe", "/tftpboot/ubuntu-signed/shimx64.efi", "/tftpboot/grub/grub.cfg"):
-        add(f"boot:{os.path.basename(p)}", os.path.exists(p), p, "Reinstall MIST imaging boot files")
+        add(f"boot:{os.path.basename(p)}", os.path.exists(p), p, "Reinstall Brume imaging boot files")
     # FOG
     try:
         fog = fog_request("GET", "/system/info")
@@ -152,7 +152,7 @@ def notify(event, detail=None, ok=True):
     def send():
         payload = {"event": event, "ok": bool(ok), "detail": detail, "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "source": "mist-imaging-api"}
         body = json.dumps(payload).encode("utf-8")
-        headers = {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "MIST-Webhook/1"}
+        headers = {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Brume-Webhook/1"}
         if "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url:
             body = json.dumps({"content": ("[%s] %s %s" % ("OK" if ok else "FAIL", event, json.dumps(detail, ensure_ascii=False)[:1500]))[:1900]}).encode("utf-8")
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
@@ -397,7 +397,7 @@ def fog_image_path(image_id):
 
 def fog_session_payload(image_id, body):
     payload = {
-        "name": str(body.get("name", "") or body.get("sessionName", "") or "MIST multicast"),
+        "name": str(body.get("name", "") or body.get("sessionName", "") or "Brume multicast"),
         "port": str(body.get("port", "63100") or "63100"),
         "clients": "-2",
         "sessclients": str(body.get("clients", "1") or "1"),
@@ -644,7 +644,7 @@ def network_overview():
 
 
 def battery_payload():
-    helper = os.environ.get("MIST_BATTERY_HELPER", os.environ.get("JOG_BATTERY_HELPER", "/usr/local/sbin/mist-battery.sh" if os.path.exists("/usr/local/sbin/mist-battery.sh") else "/usr/local/sbin/mist-battery.sh"))
+    helper = os.environ.get("Brume_BATTERY_HELPER", os.environ.get("JOG_BATTERY_HELPER", "/usr/local/sbin/mist-battery.sh" if os.path.exists("/usr/local/sbin/mist-battery.sh") else "/usr/local/sbin/mist-battery.sh"))
     try:
         p = subprocess.run([helper], capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
@@ -1469,7 +1469,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def status_page(self):
-        status_dir = os.environ.get("MIST_STATUS_DIR", os.environ.get("JOG_STATUS_DIR", "/var/lib/mist/status"))
+        status_dir = os.environ.get("Brume_STATUS_DIR", os.environ.get("JOG_STATUS_DIR", "/var/lib/mist/status"))
         path = os.path.join(status_dir, "index.html")
         if not os.path.isfile(path):
             subprocess.run(["/usr/local/bin/mist-refresh-status.sh"], timeout=30, check=False,
@@ -1520,7 +1520,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path in ("/api/fog/multicast/launch-local", "/api/fog/multicast/stop-local") and self.client_address[0] not in LOCAL_HOSTS:
             return self.json({"ok": False, "error": "Local multicast endpoints are loopback only"}, 403)
         if path == "/api/session":
-            return self.json({"ok": True, "mode": "demo" if self.demo else "live", "adminUser": (lambda e: e.get("MIST_ADMIN_USER") or e.get("JOG_ADMIN_USER","mistadmin"))(load_env(JOG_ENV_FILE))})
+            return self.json({"ok": True, "mode": "demo" if self.demo else "live", "adminUser": (lambda e: e.get("Brume_ADMIN_USER") or e.get("JOG_ADMIN_USER","mistadmin"))(load_env(JOG_ENV_FILE))})
         if path == "/api/devices":
             return self.guarded(lambda: devices_payload(self.demo))
         if path == "/api/battery":
@@ -1730,7 +1730,7 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ApiError("Host name and MAC are required", 400)
                 if self.demo:
                     return {"ok": True, "demo": True, "id": "demo"}
-                resp = fog_request("POST", "/host/create", {"name": name, "description": str(body.get("description", "") or "Created by MIST portal"), "macs": [mac]})
+                resp = fog_request("POST", "/host/create", {"name": name, "description": str(body.get("description", "") or "Created by Brume portal"), "macs": [mac]})
                 return {"ok": True, "id": extract_id(resp), "response": resp}
             return self.guarded(add_host)
         if path == "/api/fog/images":
@@ -1880,7 +1880,7 @@ class Handler(SimpleHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--demo", action="store_true")
-    ap.add_argument("--port", type=int, default=int(os.environ.get("MIST_IMAGING_PORT", os.environ.get("JOG_IMAGING_PORT", "8088"))))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("Brume_IMAGING_PORT", os.environ.get("JOG_IMAGING_PORT", "8088"))))
     a = ap.parse_args()
     Handler.demo = a.demo
     srv = ThreadingHTTPServer(("127.0.0.1", a.port), Handler)

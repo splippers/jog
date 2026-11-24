@@ -1,6 +1,6 @@
 #!ipxe
 
-# Portable boot script for MIST + JOS — Secure Boot OFF machines only (iPXE and a direct kernel load are not
+# Portable boot script for Brume + JOS — Secure Boot OFF machines only (iPXE and a direct kernel load are not
 # verifiable). For Secure Boot use the shim chain: scripts/jos-stage-boot.sh in the jos repo (installed as mist-stage-jos-boot.sh).
 # Prefer DHCP-provided NEXT SERVER.
 

@@ -65,6 +65,6 @@ esac
 # mist-fog-install-once.sh calls mist-post-fog-setup.sh when the install finishes.
 if [[ -f /etc/mist/fog-native.done && -x /usr/local/sbin/mist-post-fog-setup.sh ]]; then
   /usr/local/sbin/mist-post-fog-setup.sh || log "post-FOG corporate setup warned; re-run: sudo mist-post-fog-setup.sh"
-elif [[ "${MIST_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" || "${MIST_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" || "${MIST_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" || "${MIST_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" || "${MIST_PROVISIONING_ENABLE:-${JOG_PROVISIONING_ENABLE:-0}}" == "1" ]]; then
+elif [[ "${Brume_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" || "${Brume_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" || "${Brume_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" || "${Brume_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" || "${Brume_PROVISIONING_ENABLE:-${JOG_PROVISIONING_ENABLE:-0}}" == "1" ]]; then
   log "corporate profile queued; it will be applied after FOG install finishes"
 fi

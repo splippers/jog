@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Sync vendor driver packs for every model in the FOG inventory.
 
-The MIST appliance normally has no Windows workstation attached.  This script
+The Brume appliance normally has no Windows workstation attached.  This script
 does the same catalog work as Sync-FOGDriverPacks.ps1, but runs on the appliance
 and publishes directly into the Samba [Drivers] share.
 
@@ -155,7 +155,7 @@ def resolve_share(explicit: str) -> Path:
     env = read_env_file(Path("/etc/mist/mist.env"))
     if env.get("JOG_DRIVER_SHARE_PATH"):
         return Path(env["JOG_DRIVER_SHARE_PATH"]).expanduser()
-    if os.environ.get("MIST_DRIVER_SHARE_PATH", os.environ.get("JOG_DRIVER_SHARE_PATH")):
+    if os.environ.get("Brume_DRIVER_SHARE_PATH", os.environ.get("JOG_DRIVER_SHARE_PATH")):
         return Path(os.environ["JOG_DRIVER_SHARE_PATH"]).expanduser()
     try:
         result = subprocess.run(
@@ -686,7 +686,7 @@ def write_manifest(share: Path, entries: list[dict]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sync FOG model driver packs into the MIST Drivers share")
+    parser = argparse.ArgumentParser(description="Sync FOG model driver packs into the Brume Drivers share")
     parser.add_argument("--share", default="", help="Samba share path (default: [Drivers] path)")
     parser.add_argument("--work-dir", default=str(DEFAULT_WORK_DIR), help="download/extract cache")
     parser.add_argument("--api-script", default="/usr/local/bin/mist-model-api.py", help="model inventory API")

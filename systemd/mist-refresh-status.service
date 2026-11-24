@@ -1,5 +1,5 @@
 [Unit]
-Description=MIST — refresh local status HTML for kiosk
+Description=Brume — refresh local status HTML for kiosk
 After=network-online.target
 Wants=network-online.target
 

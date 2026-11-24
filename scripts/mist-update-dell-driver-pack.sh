@@ -37,7 +37,7 @@ for command_name in curl cabextract python3 sha256sum; do
   command -v "$command_name" >/dev/null 2>&1 || die "required command not found: $command_name"
 done
 
-SHARE_NAME="${MIST_DRIVER_SHARE_NAME:-${JOG_DRIVER_SHARE_NAME:-Drivers}}"
+SHARE_NAME="${Brume_DRIVER_SHARE_NAME:-${JOG_DRIVER_SHARE_NAME:-Drivers}}"
 if [[ -n "${JOG_DRIVER_SHARE_PATH:-}" ]]; then
   SHARE_PATH="$JOG_DRIVER_SHARE_PATH"
 elif command -v testparm >/dev/null 2>&1; then

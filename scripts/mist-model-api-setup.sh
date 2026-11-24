@@ -94,8 +94,8 @@ DB_NAME="${DB_name:-fog}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SRC_BIN="${MIST_MODEL_API_SRC:-${JOG_MODEL_API_SRC:-$ROOT/scripts/mist-model-api.py}}"
-SRC_SERVICE="${MIST_MODEL_API_SERVICE_SRC:-${JOG_MODEL_API_SERVICE_SRC:-$ROOT/systemd/mist-model-api.service}}"
+SRC_BIN="${Brume_MODEL_API_SRC:-${JOG_MODEL_API_SRC:-$ROOT/scripts/mist-model-api.py}}"
+SRC_SERVICE="${Brume_MODEL_API_SERVICE_SRC:-${JOG_MODEL_API_SERVICE_SRC:-$ROOT/systemd/mist-model-api.service}}"
 [[ -f "$SRC_BIN" ]] || SRC_BIN=/usr/local/share/mist/scripts/mist-model-api.py
 [[ -f "$SRC_SERVICE" ]] || SRC_SERVICE=/usr/local/share/mist/systemd/mist-model-api.service
 [[ -f "$SRC_BIN" ]] || die "mist-model-api.py source not found"
@@ -172,4 +172,4 @@ log "model API installed and healthy on 0.0.0.0:8089"
 log "token: $TOKEN"
 log "Windows client:"
 log "  .\\Sync-FOGDriverPacks.ps1 -ApiUrl http://192.168.254.1:8089/api/models -ApiToken '$TOKEN'"
-log "Keep the token in C:\\ProgramData\\MIST\\model-api.token on the Windows workstation, not in a script."
+log "Keep the token in C:\\ProgramData\\Brume\\model-api.token on the Windows workstation, not in a script."

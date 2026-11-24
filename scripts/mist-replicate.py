@@ -7,8 +7,8 @@ import sys
 import urllib.error
 import urllib.request
 
-FOG_ENV = os.environ.get("MIST_FOG_API_ENV", os.environ.get("JOG_FOG_API_ENV", "/etc/mist/fog-api.env"))
-JOG_ENV = os.environ.get("MIST_ENV_FILE", os.environ.get("JOG_ENV_FILE", "/etc/mist/mist.env"))
+FOG_ENV = os.environ.get("Brume_FOG_API_ENV", os.environ.get("JOG_FOG_API_ENV", "/etc/mist/fog-api.env"))
+JOG_ENV = os.environ.get("Brume_ENV_FILE", os.environ.get("JOG_ENV_FILE", "/etc/mist/mist.env"))
 BUILD_STATUS = "/var/www/html/mist-replicator-build.status"
 IMAGE_NAME = "mist-replicator"
 SOURCE_VM = "mist-replicator"
@@ -108,7 +108,7 @@ def ensure_image(name=IMAGE_NAME):
     sql(
         "INSERT INTO images "
         "(imageName,imageDesc,imagePath,imageCreateBy,imageTypeID,imagePartitionTypeID,imageOSID,imageFormat,imageCompress,imageEnabled,imageReplicate,imageSectorSize,imageArchID) "
-        "VALUES ('%s','MIST replicator system image','%s','jogreplicate',1,1,50,5,6,1,0,512,2)"
+        "VALUES ('%s','Brume replicator system image','%s','jogreplicate',1,1,50,5,6,1,0,512,2)"
         % (q(name), q(path))
     )
     image_id = scalar("SELECT imageID FROM images WHERE imageName='%s' LIMIT 1" % q(name))
@@ -130,7 +130,7 @@ def ensure_host(vm, image_id):
     name = host_name_for(vm, mac)
     sql(
         "INSERT INTO hosts (hostName,hostDesc,hostIP,hostImage,hostCreateBy,hostArchID,hostEnforce) "
-        "VALUES ('%s','MIST managed VM','',%d,'jogreplicate',2,1)" % (q(name), image_id)
+        "VALUES ('%s','Brume managed VM','',%d,'jogreplicate',2,1)" % (q(name), image_id)
     )
     host_id = int(scalar("SELECT hostID FROM hosts WHERE hostName='%s' LIMIT 1" % q(name)) or 0)
     if not host_id:
