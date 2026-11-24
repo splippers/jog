@@ -29,8 +29,8 @@ See upstream: [FOG Project documentation](https://docs.fogproject.org/) and stor
 
 For “satellite” laptops that only need a **local copy of `/images`** and maybe a **local HTTP/TFTP mirror**, use:
 
-- `cluster/mist-node-role.env.example` for `edge` vs `standalone`
-- `scripts/mist-sync-images-from-primary.sh` (rsync from the primary’s `/images` or exported volume)
+- `cluster/haar-node-role.env.example` for `edge` vs `standalone`
+- `scripts/haar-sync-images-from-primary.sh` (rsync from the primary’s `/images` or exported volume)
 
 Edges are **not** a second full FOG unless you intentionally run a second stack (separate DB). Rsync keeps **payload** aligned; the **database** is still authoritative on the primary unless you build HA MySQL (out of scope here).
 
@@ -40,7 +40,7 @@ Often the cheapest win is **10GbE / LACP / better switch fabric** on one Brume b
 
 ## Cluster env file
 
-Copy `cluster/mist-node-role.env.example` to `/etc/mist/cluster.env` (the wizard can populate `JOG_CLUSTER_MODE` and `JOG_PRIMARY_SSH`).
+Copy `cluster/haar-node-role.env.example` to `/etc/haar/cluster.env` (the wizard can populate `JOG_CLUSTER_MODE` and `JOG_PRIMARY_SSH`).
 
 ## Operational checklist (multi-Brume)
 

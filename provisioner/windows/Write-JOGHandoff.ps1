@@ -18,7 +18,7 @@
 param(
     [Parameter(Mandatory)]$Config,
     [Parameter(Mandatory)][string]$LogFile,
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json')
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'haar-provisioning.json')
 )
 
 $ErrorActionPreference = 'Stop'

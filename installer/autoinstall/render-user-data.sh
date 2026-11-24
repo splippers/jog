@@ -7,11 +7,11 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="default"
-PW="${1:-mist-change-me-now}"
+PW="${1:-haar-change-me-now}"
 
 if [[ "${1:-}" == "hyperv" ]]; then
   MODE="hyperv"
-  PW="${2:-mist-change-me-now}"
+  PW="${2:-haar-change-me-now}"
 fi
 
 case "$MODE" in

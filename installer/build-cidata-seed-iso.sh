@@ -5,7 +5,7 @@ set -euo pipefail
 # See docs/ISO-BUILD.md
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT="${1:-${HERE}/mist-autoinstall-seed.iso}"
+OUT="${1:-${HERE}/haar-autoinstall-seed.iso}"
 AIN="${HERE}/autoinstall"
 
 if [[ ! -f "${AIN}/user-data" ]]; then

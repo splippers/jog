@@ -1,0 +1,9 @@
+[Unit]
+Description=Brume — refresh local status HTML for kiosk
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=JOG_STATUS_DIR=/var/lib/haar/status
+ExecStart=/usr/local/bin/haar-refresh-status.sh

@@ -13,7 +13,7 @@
     and recovery-password escrow, restarting as needed.
 
 .PARAMETER ConfigPath
-    Rendered mist-provisioning.json. Default is beside this script.
+    Rendered haar-provisioning.json. Default is beside this script.
 
 .PARAMETER Credential
     Optional delegated domain-join credential. If omitted, Get-Credential
@@ -28,7 +28,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'haar-provisioning.json'),
     [PSCredential]$Credential,
     [switch]$SkipConnectivityCheck,
     [switch]$NoReboot
@@ -112,7 +112,7 @@ $plain = ''
 if ($joinMode -eq 'Credential') {
     if (-not $Credential) {
         $hint = [string](Get-JOGProperty $domainJoin 'User' '')
-        if ([string]::IsNullOrWhiteSpace($hint)) { $hint = "$domain\svc-mist-join" }
+        if ([string]::IsNullOrWhiteSpace($hint)) { $hint = "$domain\svc-haar-join" }
         $Credential = Get-Credential -UserName $hint -Message "Delegated domain-join account for $domain"
         if (-not $Credential) { exit 3 }
     }

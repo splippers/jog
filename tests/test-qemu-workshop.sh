@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TMP="$(mktemp -d "${TMPDIR:-/tmp}/mist-qemu-workshop.XXXXXX")"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/haar-qemu-workshop.XXXXXX")"
 trap 'rm -rf -- "$TMP"' EXIT
 
 mkdir -p "$TMP/bin" "$TMP/ovmf"
@@ -38,23 +38,23 @@ export JOG_QEMU_OVMF_DIR="$TMP/ovmf"
 export JOG_QEMU_DISPLAY=none
 export JOG_QEMU_TEST_ARGS="$TMP/qemu-args"
 
-"$ROOT/scripts/mist-qemu-workshop.sh" check >/dev/null
-"$ROOT/scripts/mist-qemu-workshop.sh" create first 5 >/dev/null
-"$ROOT/scripts/mist-qemu-workshop.sh" list | grep -q '5.0 GiB[[:space:]]first'
-"$ROOT/scripts/mist-qemu-workshop.sh" run first
+"$ROOT/scripts/haar-qemu-workshop.sh" check >/dev/null
+"$ROOT/scripts/haar-qemu-workshop.sh" create first 5 >/dev/null
+"$ROOT/scripts/haar-qemu-workshop.sh" list | grep -q '5.0 GiB[[:space:]]first'
+"$ROOT/scripts/haar-qemu-workshop.sh" run first
 grep -q 'value=on' "$JOG_QEMU_TEST_ARGS"
 grep -q 'id=net0,restrict=on' "$JOG_QEMU_TEST_ARGS"
 ! grep -q 'tap' "$JOG_QEMU_TEST_ARGS"
 [[ "$(stat -c '%a' "$JOG_QEMU_WORKSHOP_DIR/vars/first.fd")" == 600 ]]
 
-if "$ROOT/scripts/mist-qemu-workshop.sh" create second 1 >"$TMP/out" 2>&1; then
+if "$ROOT/scripts/haar-qemu-workshop.sh" create second 1 >"$TMP/out" 2>&1; then
   echo "expected the workspace budget to reject the second disk" >&2
   exit 1
 fi
 grep -q 'storage budget exceeded' "$TMP/out"
 [[ ! -e "$JOG_QEMU_WORKSHOP_DIR/disks/second.qcow2" ]]
 
-if "$ROOT/scripts/mist-qemu-workshop.sh" create ../escape 1 >"$TMP/out" 2>&1; then
+if "$ROOT/scripts/haar-qemu-workshop.sh" create ../escape 1 >"$TMP/out" 2>&1; then
   echo "expected invalid VM name to be rejected" >&2
   exit 1
 fi

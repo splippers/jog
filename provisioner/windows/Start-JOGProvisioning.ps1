@@ -8,7 +8,7 @@
     Stages are idempotent and resumable. State lives in C:\ProgramData\Brume\Provisioning.json.
 
 .PARAMETER ConfigPath
-    Path to the rendered mist-provisioning.json.
+    Path to the rendered haar-provisioning.json.
 
 .PARAMETER Resume
     Accepted for the scheduled task / SetupComplete call. The orchestrator always resumes from state.
@@ -24,7 +24,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'haar-provisioning.json'),
     [switch]$Resume,
     [switch]$Force,
     [switch]$NoReboot,

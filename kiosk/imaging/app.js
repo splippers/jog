@@ -1,7 +1,7 @@
 if(typeof Warning==="undefined"){window.Warning=class Warning extends Error{constructor(m){super(m);this.name="Warning";}};}
 const state = {
   mode: "live",
-  adminUser: "mistadmin",
+  adminUser: "haaradmin",
   devices: [],
   hosts: [],
   images: [],
@@ -94,7 +94,7 @@ function sudoPrompt(reason) {
   return new Promise((resolve) => {
     sudoResolver = resolve;
     $("#sudo-reason").textContent = reason || "This action needs root privileges. Enter a sudo-capable local account.";
-    $("#sudo-user").value = state.adminUser || "mistadmin";
+    $("#sudo-user").value = state.adminUser || "haaradmin";
     $("#sudo-pass").value = "";
     $("#sudo-error").hidden = true;
     $("#sudo-modal").hidden = false;
@@ -355,7 +355,7 @@ async function deleteTask(id, host) {
 async function loadSession() {
   const data = await request("/api/session");
   state.mode = data.mode;
-  state.adminUser = data.adminUser || "mistadmin";
+  state.adminUser = data.adminUser || "haaradmin";
   const chip = $("#mode");
   chip.textContent = data.mode.toUpperCase();
   chip.hidden = false;
@@ -567,7 +567,7 @@ async function loadMulticastStatus() {
 }
 
 async function loadReplicator() {
-  const data = await request("/api/mist/replicate/status?vm=mist-replicator");
+  const data = await request("/api/haar/replicate/status?vm=haar-replicator");
   state.replicator = data;
   const task = data.task || {};
   const summary = [
@@ -583,8 +583,8 @@ async function loadReplicator() {
   const options = state.vms.map((vm) => vm.name).filter(Boolean);
   fillSelect(source, options.map((name) => ({ name })), "Select VM", (r) => r.name, "name");
   fillSelect(target, options.map((name) => ({ name })), "Select VM", (r) => r.name, "name");
-  if (options.includes("mist-replicator")) source.value = "mist-replicator";
-  if (options.length) target.value = options.find((name) => name !== "mist-replicator") || options[0];
+  if (options.includes("haar-replicator")) source.value = "haar-replicator";
+  if (options.length) target.value = options.find((name) => name !== "haar-replicator") || options[0];
 }
 
 async function loadInterfaces() {
@@ -903,7 +903,7 @@ async function refreshPanel(name) {
     if (name === "replicate") await Promise.all([loadVMState(), loadReplicator()]);
     if (name === "network") await loadInterfaces();
     if (["vm-fleet", "vm-build", "vm-checkpoints", "vm-console", "vm-iso", "vm-resources", "vm-advanced"].includes(name)) await loadVMState();
-    if (name === "mistmetry") await loadInterfaces();
+    if (name === "haarmetry") await loadInterfaces();
     if (name === "safety") await loadOverview();
     if (name === "tutorial") renderTutorialProgress();
   } catch (error) {
@@ -929,7 +929,7 @@ function hotspotToken() {
   $("#hotspot-pass").value = passphrase;
   const bearer = randomToken(24);
   output("#hotspot-token", "HOTSPOT_SSID=Brumetry\nWPA_PASSPHRASE=" + passphrase + "\nWIFI_QR_PAYLOAD=WIFI:T:WPA;S:Brumetry;P:" + passphrase + ";H:true;;\nBrumetry_BEARER=" + bearer);
-  output("#mistmetry-token-out", "WIFI_QR_PAYLOAD=WIFI:T:WPA;S:Brumetry;P:" + passphrase + ";H:true;;\nBrumetry_BEARER=" + bearer);
+  output("#haarmetry-token-out", "WIFI_QR_PAYLOAD=WIFI:T:WPA;S:Brumetry;P:" + passphrase + ";H:true;;\nBrumetry_BEARER=" + bearer);
 }
 
 async function applyNetwork(kind, reason) {
@@ -995,7 +995,7 @@ const tutorialChapters = ["big-picture", "boot", "network", "portal", "fog", "px
 
 function readTutorialProgress() {
   try {
-    return JSON.parse(localStorage.getItem("mist-tutorial-progress") || "{}");
+    return JSON.parse(localStorage.getItem("haar-tutorial-progress") || "{}");
   } catch (error) {
     return {};
   }
@@ -1003,7 +1003,7 @@ function readTutorialProgress() {
 
 function writeTutorialProgress(progress) {
   try {
-    localStorage.setItem("mist-tutorial-progress", JSON.stringify(progress));
+    localStorage.setItem("haar-tutorial-progress", JSON.stringify(progress));
   } catch (error) {
     banner("Tutorial progress cannot be saved in this browser.", true);
   }
@@ -1471,22 +1471,22 @@ function wireEvents() {
   });
 
   $("#rep-capture").addEventListener("click", async () => {
-    const vm = value($("#rep-source-vm")) || "mist-replicator";
+    const vm = value($("#rep-source-vm")) || "haar-replicator";
     try {
-      const result = await sudoRequest("/api/mist/replicate", { action: "capture", vm }, "Capture " + vm + " as the reusable Brume replicator image?");
+      const result = await sudoRequest("/api/haar/replicate", { action: "capture", vm }, "Capture " + vm + " as the reusable Brume replicator image?");
       if (!result) return;
-      banner("Task " + (result.taskId || "") + " capturing " + vm + " as mist-replicator.");
+      banner("Task " + (result.taskId || "") + " capturing " + vm + " as haar-replicator.");
       await Promise.all([loadReplicator(), loadVMState(), loadDevices()]);
     } catch (error) { banner(error.message, true); }
   });
 
   $("#rep-deploy").addEventListener("click", async () => {
     const vm = value($("#rep-target-vm"));
-    if (!vm || vm === "mist-replicator") return banner("Choose a target VM other than mist-replicator.", true);
+    if (!vm || vm === "haar-replicator") return banner("Choose a target VM other than haar-replicator.", true);
     try {
-      const result = await sudoRequest("/api/mist/replicate", { action: "deploy", vm }, "Deploy mist-replicator to " + vm + "? Its first boot will open the setup wizard.");
+      const result = await sudoRequest("/api/haar/replicate", { action: "deploy", vm }, "Deploy haar-replicator to " + vm + "? Its first boot will open the setup wizard.");
       if (!result) return;
-      banner("Task " + (result.taskId || "") + " deploying mist-replicator to " + vm + ".");
+      banner("Task " + (result.taskId || "") + " deploying haar-replicator to " + vm + ".");
       await Promise.all([loadReplicator(), loadVMState(), loadDevices()]);
     } catch (error) { banner(error.message, true); }
   });
@@ -1705,16 +1705,16 @@ function wireEvents() {
   });
 
   $("#hotspot-generate").addEventListener("click", hotspotToken);
-  $("#mistmetry-token").addEventListener("click", hotspotToken);
+  $("#haarmetry-token").addEventListener("click", hotspotToken);
   $("#hotspot-clients").addEventListener("click", async () => {
     try {
       const result = await sudoRequest("/api/network/hotspot-clients", { iface: value($("#hotspot-iface")) }, "Read Brumetry hotspot clients.");
       if (!result) return;
       output("#network-output", result);
-      output("#mistmetry-clients-out", result.output || result);
+      output("#haarmetry-clients-out", result.output || result);
     } catch (error) { banner(error.message, true); }
   });
-  $("#mistmetry-clients").addEventListener("click", () => $("#hotspot-clients").click());
+  $("#haarmetry-clients").addEventListener("click", () => $("#hotspot-clients").click());
 
   $("#drivers-check").addEventListener("click", async () => {
     try {

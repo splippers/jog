@@ -1,15 +1,15 @@
 #!/bin/bash
 set -euo pipefail
-exec 2>>/tmp/mist_error.log
+exec 2>>/tmp/haar_error.log
 # Clone FOG Project to FOG_SRC (/opt/fogproject) and run the official installer (no Docker). FOG installs
 # itself into FOG_HOME (/opt/fog); cloning into FOG_HOME makes the installer's copy step fail
 # ("'/opt/fog/utils/.' and '/opt/fog/utils/.' are the same file").
 #
 # The installer opens its ports to ANYWHERE in ufw/firewalld. On a laptop that is also on a corporate or home
 # LAN, this script closes them again and re-opens only the imaging NIC (see "firewall" below).
-# Requires /etc/mist/mist.env with imaging NIC + IPs. Run as root after mist-install-wizard (or equivalent).
+# Requires /etc/haar/haar.env with imaging NIC + IPs. Run as root after haar-install-wizard (or equivalent).
 #
-# Brume uses dnsmasq for DHCP only; FOG owns TFTP (UDP/69). See scripts/mist-render-dnsmasq.sh.
+# Brume uses dnsmasq for DHCP only; FOG owns TFTP (UDP/69). See scripts/haar-render-dnsmasq.sh.
 #
 # Env (optional):
 #   FOG_HOME (/opt/fog), FOG_SRC (/opt/fogproject), FOG_GIT_URL, FOG_GIT_REF — install dir and git source
@@ -20,7 +20,7 @@ exec 2>>/tmp/mist_error.log
   exit 1
 }
 
-JOG_ENV="${Brume_ENV:-${JOG_ENV:-/etc/mist/mist.env}}"
+JOG_ENV="${Brume_ENV:-${JOG_ENV:-/etc/haar/haar.env}}"
 [[ -f "$JOG_ENV" ]] || {
   echo "Missing $JOG_ENV — configure imaging network first." >&2
   exit 1

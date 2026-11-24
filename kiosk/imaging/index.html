@@ -27,7 +27,7 @@
     <button data-panel="multicast">Multicast</button>
     <button data-panel="replicate">Replicate Brume</button>
     <button data-panel="network">Network wizard</button>
-    <button data-panel="mistmetry">Brumetry</button>
+    <button data-panel="haarmetry">Brumetry</button>
     <div class="nav-label">Virtual machines</div>
     <button data-panel="vm-fleet">VM fleet</button>
     <button data-panel="vm-build">Build VM</button>
@@ -113,10 +113,10 @@
           <article class="tutorial-chapter" data-chapter="boot">
             <div class="tutorial-kicker">Chapter 2</div><h2>Boot and kiosk</h2>
             <p class="lead">The appliance starts from Ubuntu 26.04 live server. Autoinstall lays down the base system; the wizard and installers add the imaging stack; LightDM starts the operator UI without a desktop shell.</p>
-            <div class="flow"><span class="flow-step">Ubuntu autoinstall</span><span class="flow-arrow">then</span><span class="flow-step">mist-install-wizard</span><span class="flow-arrow">then</span><span class="flow-step">FOG + kiosk</span></div>
+            <div class="flow"><span class="flow-step">Ubuntu autoinstall</span><span class="flow-arrow">then</span><span class="flow-step">haar-install-wizard</span><span class="flow-arrow">then</span><span class="flow-step">FOG + kiosk</span></div>
             <div class="two-col">
-              <div class="card"><h3>What the installer builds</h3><ul><li><code>/opt/mist</code> (or <code>/opt/mist</code> compat): this repository and its scripts.</li><li><code>/opt/fogproject</code> and <code>/opt/fog</code>: stock FOG source and install tree.</li><li><code>/tftpboot</code>: signed shim, GRUB, kernel, initrd and modules for JOS.</li><li><code>/etc/mist/mist.env</code> (or <code>/etc/mist/mist.env</code> compat): live role configuration.</li></ul></div>
-              <div class="card"><h3>How the kiosk starts</h3><ul><li>LightDM autologs in <code>mist</code>.</li><li>The <code>mist-kiosk</code> session runs <code>/usr/local/bin/chromium-mist.sh</code> (or compat wrapper).</li><li>Chromium opens this portal first, then FOG management and the status page.</li><li><code>Brume_CHROMIUM_RESTART=1</code>  relaunches Chromium if it exits.</li></ul></div>
+              <div class="card"><h3>What the installer builds</h3><ul><li><code>/opt/haar</code> (or <code>/opt/haar</code> compat): this repository and its scripts.</li><li><code>/opt/fogproject</code> and <code>/opt/fog</code>: stock FOG source and install tree.</li><li><code>/tftpboot</code>: signed shim, GRUB, kernel, initrd and modules for JOS.</li><li><code>/etc/haar/haar.env</code> (or <code>/etc/haar/haar.env</code> compat): live role configuration.</li></ul></div>
+              <div class="card"><h3>How the kiosk starts</h3><ul><li>LightDM autologs in <code>haar</code>.</li><li>The <code>haar-kiosk</code> session runs <code>/usr/local/bin/chromium-haar.sh</code> (or compat wrapper).</li><li>Chromium opens this portal first, then FOG management and the status page.</li><li><code>Brume_CHROMIUM_RESTART=1</code>  relaunches Chromium if it exits.</li></ul></div>
             </div>
             <div class="callout">No GNOME Shell is used. The kiosk depends on X11, LightDM, Chromium and this portal only.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="boot">Mark complete</button><button class="btn" data-next="network">Next: Networks and safety</button></div>
@@ -127,7 +127,7 @@
             <p class="lead">Brume has deliberately separate network roles. Mixing them would put a DHCP server on the wrong link, which is the main hazard this appliance is designed to prevent.</p>
             <div class="two-col">
               <div class="card"><h3>Interface roles</h3><ul><li><strong>Imaging:</strong> validated USB Ethernet, currently <code>enx34298f79151f</code>, static <code>10.99.0.1/24</code>.</li><li><strong>Backhaul:</strong> Wi-Fi <code>wlp0s20f3</code>, default route for updates and FOG web access.</li><li><strong>VM NAT:</strong> <code>virbr0</code> on <code>192.168.122.0/24</code>, forwarded through Wi-Fi.</li><li><strong>Brumetry:</strong> hidden management hotspot/API, never an imaging DHCP server.</li></ul></div>
-              <div class="card"><h3>The safety chain</h3><ol><li>The wizard only allows a USB-attached, non-wireless Ethernet NIC for imaging.</li><li><code>mist-dhcp-guard.py</code> probes for a foreign DHCP server before enabling DHCP.</li><li>dnsmasq binds only to that NIC, with <code>no-dhcp-interface</code> for every other physical NIC.</li><li>The portal reports <strong>armed</strong> only when all of those checks agree.</li></ol></div>
+              <div class="card"><h3>The safety chain</h3><ol><li>The wizard only allows a USB-attached, non-wireless Ethernet NIC for imaging.</li><li><code>haar-dhcp-guard.py</code> probes for a foreign DHCP server before enabling DHCP.</li><li>dnsmasq binds only to that NIC, with <code>no-dhcp-interface</code> for every other physical NIC.</li><li>The portal reports <strong>armed</strong> only when all of those checks agree.</li></ol></div>
             </div>
             <div class="callout">The onboard NIC <code>eno1</code> is disabled. libvirt's <code>virbr0</code> runs its own VM DHCP service; it is not the imaging DHCP server.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="network">Open Network wizard</button><button class="btn" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="network">Mark complete</button><button class="btn" data-next="portal">Next: Control portal</button></div>
@@ -138,8 +138,8 @@
             <p class="lead">This page is a thin browser UI over a loopback JSON API. It keeps secrets on the server and asks for sudo only when an action changes the system.</p>
             <div class="flow"><span class="flow-step">Browser panel</span><span class="flow-arrow">JSON</span><span class="flow-step">127.0.0.1:8088</span><span class="flow-arrow">reads</span><span class="flow-step">FOG API / helper</span></div>
             <div class="two-col">
-              <div class="card"><h3>Read views</h3><ul><li>Overview, hosts, images, VM fleet, ISO lists and logs load without a password prompt.</li><li>FOG tokens are read from <code>/etc/mist/fog-api.env</code> by the service, never sent to the browser.</li><li>VM lists use <code>/api/vm/view</code> through passwordless local sudo.</li></ul></div>
-              <div class="card"><h3>Privileged actions</h3><ul><li>Create, delete, restart, network changes, VM actions and checkpoints open the sudo modal.</li><li>Credentials go only to the loopback API and are used once through <code>mist-portal-network.sh</code>.</li><li>The helper allowlists commands and binds the API to <code>127.0.0.1</code>.</li></ul></div>
+              <div class="card"><h3>Read views</h3><ul><li>Overview, hosts, images, VM fleet, ISO lists and logs load without a password prompt.</li><li>FOG tokens are read from <code>/etc/haar/fog-api.env</code> by the service, never sent to the browser.</li><li>VM lists use <code>/api/vm/view</code> through passwordless local sudo.</li></ul></div>
+              <div class="card"><h3>Privileged actions</h3><ul><li>Create, delete, restart, network changes, VM actions and checkpoints open the sudo modal.</li><li>Credentials go only to the loopback API and are used once through <code>haar-portal-network.sh</code>.</li><li>The helper allowlists commands and binds the API to <code>127.0.0.1</code>.</li></ul></div>
             </div>
             <div class="callout">If a panel shows an error instead of data, check Overview for service health and FOG API state before changing anything.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-chapter-complete="portal">Mark complete</button><button class="btn" data-next="fog">Next: FOG server</button></div>
@@ -161,8 +161,8 @@
             <p class="lead">Imaged machines do not boot a FOG kernel directly. They follow a signed UEFI chain into the JOS/Brume Agent runtime, which then runs the stock FOS userland against FOG.</p>
             <div class="flow"><span class="flow-step">UEFI PXE</span><span class="flow-arrow">shim</span><span class="flow-step">GRUB</span><span class="flow-arrow">signed kernel</span><span class="flow-step">JOS/Brume Agent initrd</span><span class="flow-arrow">FOS userland</span><span class="flow-step">FOG</span></div>
             <div class="two-col">
-              <div class="card"><h3>Boot chain</h3><ul><li>Microsoft-signed <code>shimx64.efi</code> is served first.</li><li>GRUB loads a Canonical-signed kernel, the JOS/Brume Agent initrd and signed modules.</li><li>The boot menu offers deploy/capture, registration, system info, debug and memtest.</li><li><code>mist-stage-jos-boot.sh</code> (or compat) stages everything under <code>/tftpboot</code>.</li></ul></div>
-              <div class="card"><h3>Why JOS/Brume Agent runtime exists</h3><ul><li>Stock FOS needs its own kernel and cannot boot with Dell Secure Boot enforcing keys.</li><li>JOS/Brume Agent keeps FOS userland but uses a signed Ubuntu kernel and matching modules.</li><li><code>mist-doctor.sh</code> (or compat) verifies the staged chain and flags kernel drift.</li><li>The client fetches FOG files by HTTP and image data by NFS.</li></ul></div>
+              <div class="card"><h3>Boot chain</h3><ul><li>Microsoft-signed <code>shimx64.efi</code> is served first.</li><li>GRUB loads a Canonical-signed kernel, the JOS/Brume Agent initrd and signed modules.</li><li>The boot menu offers deploy/capture, registration, system info, debug and memtest.</li><li><code>haar-stage-jos-boot.sh</code> (or compat) stages everything under <code>/tftpboot</code>.</li></ul></div>
+              <div class="card"><h3>Why JOS/Brume Agent runtime exists</h3><ul><li>Stock FOS needs its own kernel and cannot boot with Dell Secure Boot enforcing keys.</li><li>JOS/Brume Agent keeps FOS userland but uses a signed Ubuntu kernel and matching modules.</li><li><code>haar-doctor.sh</code> (or compat) verifies the staged chain and flags kernel drift.</li><li>The client fetches FOG files by HTTP and image data by NFS.</li></ul></div>
             </div>
             <div class="callout">Memtest needs Secure Boot off. iPXE is omitted because it is unsigned and cannot be the first stage.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="pxe">Mark complete</button><button class="btn" data-next="vm">Next: Windows VM workshop</button></div>
@@ -206,7 +206,7 @@
             <div class="tutorial-kicker">Chapter 10</div><h2>Operations and scaling</h2>
             <p class="lead">Day-to-day operation is service health, logs and safe expansion. Never solve capacity by putting two DHCP servers on one broadcast domain.</p>
             <div class="two-col">
-              <div class="card"><h3>Daily operations</h3><ul><li>Use System and logs to restart services and read journal output.</li><li>Rotate FOG API tokens with <code>sudo /usr/local/sbin/mist-fog-api-init.sh --force</code> (or compat).</li><li>Restage JOS/Brume Agent boot files after a kernel update.</li><li>Re-run the safety check after any NIC or network change.</li></ul></div>
+              <div class="card"><h3>Daily operations</h3><ul><li>Use System and logs to restart services and read journal output.</li><li>Rotate FOG API tokens with <code>sudo /usr/local/sbin/haar-fog-api-init.sh --force</code> (or compat).</li><li>Restage JOS/Brume Agent boot files after a kernel update.</li><li>Re-run the safety check after any NIC or network change.</li></ul></div>
               <div class="card"><h3>Scaling patterns</h3><ul><li>One Brume per imaging switch or table, with non-overlapping subnets.</li><li>One FOG primary with storage nodes for fan-out.</li><li>Edge Brume nodes syncing <code>/images</code> from a primary.</li><li>Better switch fabric or 10GbE before adding more heads.</li></ul></div>
             </div>
             <div class="callout">Only one DHCP server may answer on an imaging segment. Multicast sessions should also stay one per VLAN.</div>
@@ -217,8 +217,8 @@
             <div class="tutorial-kicker">Chapter 11</div><h2>Troubleshooting</h2>
             <p class="lead">Most failures map to one of a few layers. Start at the layer that changed last, then move outward.</p>
             <div class="two-col">
-              <div class="card"><h3>Quick diagnosis</h3><ul><li><strong>Safety review:</strong> imaging NIC missing, wireless, or not USB Ethernet; reattach and re-run the check.</li><li><strong>Portal offline:</strong> check <code>mist-imaging-api</code> and <code>http://127.0.0.1:8088/api/session</code>.</li><li><strong>FOG error:</strong> check service health and API tokens; do not assume the list is empty.</li><li><strong>VM no internet:</strong> check <code>virbr0</code>, libvirt NAT rules and the Wi-Fi default route.</li></ul></div>
-              <div class="card"><h3>Boot and kiosk failures</h3><ul><li>PXE fails: check <code>/tftpboot</code>, dnsmasq bootfile, and staged JOS/Brume Agent files.</li><li>Secure Boot rejects boot: confirm shim, signed kernel and GRUB staging.</li><li>Kiosk fails: check <code>lightdm --show-config</code>, LightDM logs and <code>/tmp/mist-kiosk-mist.log</code> (or compat log).</li><li>NIC disappeared: check kernel USB disconnect messages and physical cabling.</li></ul></div>
+              <div class="card"><h3>Quick diagnosis</h3><ul><li><strong>Safety review:</strong> imaging NIC missing, wireless, or not USB Ethernet; reattach and re-run the check.</li><li><strong>Portal offline:</strong> check <code>haar-imaging-api</code> and <code>http://127.0.0.1:8088/api/session</code>.</li><li><strong>FOG error:</strong> check service health and API tokens; do not assume the list is empty.</li><li><strong>VM no internet:</strong> check <code>virbr0</code>, libvirt NAT rules and the Wi-Fi default route.</li></ul></div>
+              <div class="card"><h3>Boot and kiosk failures</h3><ul><li>PXE fails: check <code>/tftpboot</code>, dnsmasq bootfile, and staged JOS/Brume Agent files.</li><li>Secure Boot rejects boot: confirm shim, signed kernel and GRUB staging.</li><li>Kiosk fails: check <code>lightdm --show-config</code>, LightDM logs and <code>/tmp/haar-kiosk-haar.log</code> (or compat log).</li><li>NIC disappeared: check kernel USB disconnect messages and physical cabling.</li></ul></div>
             </div>
             <div class="callout">Do not bypass safety to keep imaging running. A missing imaging NIC is a stop condition, not a reason to enable DHCP on another interface.</div>
             <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="troubleshoot">Mark complete</button></div>
@@ -294,7 +294,7 @@
     <section class="panel" data-panel="replicate">
       <div class="panel-head"><div><h1>Brume replicator</h1><p>Turn one clean Brume install into more Brume systems using the same FOG imaging path as every other client.</p></div><button class="btn" data-refresh="replicate">Refresh</button></div>
       <div class="card fog-card">
-        <div class="hw-head"><div><h2>Create another Brume system</h2><p>Capture the generic source, then deploy it to any blank VM. The target runs an interactive first-boot wizard.</p></div><span id="rep-health" class="hw-status notice">Source image: mist-replicator</span></div>
+        <div class="hw-head"><div><h2>Create another Brume system</h2><p>Capture the generic source, then deploy it to any blank VM. The target runs an interactive first-boot wizard.</p></div><span id="rep-health" class="hw-status notice">Source image: haar-replicator</span></div>
         <div class="form-grid">
           <label>Source VM<select id="rep-source-vm"></select></label>
           <label>Target VM<select id="rep-target-vm"></select></label>
@@ -303,7 +303,7 @@
       </div>
       <div class="card"><div class="hw-head"><h2>Replicator status</h2><span id="rep-status" class="muted">Loading…</span></div><pre id="rep-detail" class="output"></pre></div>
       <div class="card">
-        <div class="callout">Flow: build a blank VM, deploy <code>mist-replicator</code> to it, open its console, then answer the first-boot wizard. The wizard installs FOG, JOS/Brume Agent runtime, the kiosk and network settings on the new Brume system.</div>
+        <div class="callout">Flow: build a blank VM, deploy <code>haar-replicator</code> to it, open its console, then answer the first-boot wizard. The wizard installs FOG, JOS/Brume Agent runtime, the kiosk and network settings on the new Brume system.</div>
       </div>
     </section>
 
@@ -363,11 +363,11 @@
       <pre id="network-output" class="output" hidden></pre>
     </section>
 
-    <section class="panel" data-panel="mistmetry">
-      <div class="panel-head"><div><h1>Brumetry management</h1><p>Hidden hotspot, token distribution and FOG API bearer codes for mobile monitoring.</p></div><button class="btn" id="mistmetry-clients">Refresh clients</button></div>
+    <section class="panel" data-panel="haarmetry">
+      <div class="panel-head"><div><h1>Brumetry management</h1><p>Hidden hotspot, token distribution and FOG API bearer codes for mobile monitoring.</p></div><button class="btn" id="haarmetry-clients">Refresh clients</button></div>
       <div class="two-col">
-        <div class="card"><h2>Hotspot state</h2><div id="mistmetry-state" class="kv"></div><button class="btn primary" id="mistmetry-token">New QR token</button><pre id="mistmetry-token-out" class="output" hidden></pre></div>
-        <div class="card"><h2>Associated clients</h2><pre id="mistmetry-clients-out" class="output">No data yet.</pre><p class="note">Brumetry is management-only. It must never be the imaging DHCP server.</p></div>
+        <div class="card"><h2>Hotspot state</h2><div id="haarmetry-state" class="kv"></div><button class="btn primary" id="haarmetry-token">New QR token</button><pre id="haarmetry-token-out" class="output" hidden></pre></div>
+        <div class="card"><h2>Associated clients</h2><pre id="haarmetry-clients-out" class="output">No data yet.</pre><p class="note">Brumetry is management-only. It must never be the imaging DHCP server.</p></div>
       </div>
     </section>
 
@@ -696,7 +696,7 @@
       <div class="panel-head"><div><h1>System, services and logs</h1><p>Restart imaging services and inspect their logs without leaving the portal.</p></div><button class="btn" data-refresh="system">Refresh</button></div>
       <div class="card"><h2>Services</h2><div id="system-services" class="table"></div></div>
       <div class="card"><h2>FOG API</h2><div id="fog-summary" class="kv"></div></div>
-      <div class="card form-grid"><label>Log source<select id="logs-unit"><option>mist-imaging-api</option><option>dnsmasq</option><option>apache2</option><option>mariadb</option><option>tftpd-hpa</option><option>mist-mistmetry-hotspot</option><option>mist-mistmetry-dnsmasq</option></select></label><button class="btn" id="logs-load">Load logs</button></div>
+      <div class="card form-grid"><label>Log source<select id="logs-unit"><option>haar-imaging-api</option><option>dnsmasq</option><option>apache2</option><option>mariadb</option><option>tftpd-hpa</option><option>haar-haarmetry-hotspot</option><option>haar-haarmetry-dnsmasq</option></select></label><button class="btn" id="logs-load">Load logs</button></div>
       <pre id="logs-output" class="output">No logs loaded.</pre>
       <p class="note">FOG management and host status remain available in the adjacent browser tabs.</p>
     </section>
@@ -707,7 +707,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sudo-title">
     <h2 id="sudo-title">Administrator access required</h2>
     <p id="sudo-reason">This action needs root privileges. Enter a sudo-capable local account.</p>
-    <label>Username<input id="sudo-user" autocomplete="username" value="mistadmin"></label>
+    <label>Username<input id="sudo-user" autocomplete="username" value="haaradmin"></label>
     <label>Password<input id="sudo-pass" type="password" autocomplete="current-password"></label>
     <p class="error" id="sudo-error" hidden></p>
     <div class="row-buttons"><button class="btn" id="sudo-cancel">Cancel</button><button class="btn primary" id="sudo-confirm">Run with sudo</button></div>

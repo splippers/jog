@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-ERROR_LOG="${Brume_ERROR_LOG:-${JOG_ERROR_LOG:-${TMPDIR:-/tmp}}/mist-build-${UID}.log}"
+ERROR_LOG="${Brume_ERROR_LOG:-${JOG_ERROR_LOG:-${TMPDIR:-/tmp}}/haar-build-${UID}.log}"
 exec 2>>"$ERROR_LOG"
 # Build one Ubuntu Server Live ISO with embedded nocloud + autoinstall kernel args for Hyper-V Gen2 (UEFI).
 # Attach only this ISO to a new VM; installer runs unattended, then first-boot configures Brume without the wizard.
@@ -13,7 +13,7 @@ exec 2>>"$ERROR_LOG"
 #
 # Env:
 #   SRC_ISO — override source ISO path (default: installer/ubuntu-<UBUNTU_RELEASE>-live-server-amd64.iso)
-#   OUT_ISO — output path (default: installer/ubuntu-<release>-live-server-mist-hyperv-amd64.iso)
+#   OUT_ISO — output path (default: installer/ubuntu-<release>-live-server-haar-hyperv-amd64.iso)
 #   Brume_ERROR_LOG — override the per-user build log location
 #   Brume_UNATTEND_IFACE, Brume_UNATTEND_IMAGING_IP, Brume_UNATTEND_PREFIX,
 #   Brume_UNATTEND_DHCP_START, Brume_UNATTEND_DHCP_END, Brume_UNATTEND_ROUTER,
@@ -24,9 +24,9 @@ INSTALLER="${ROOT}/installer"
 AUTO="${INSTALLER}/autoinstall"
 REL="$(tr -d '[:space:]' <"${INSTALLER}/UBUNTU_RELEASE")"
 
-PW="${1:-mist-change-me-now}"
+PW="${1:-haar-change-me-now}"
 SRC_ISO="${SRC_ISO:-${INSTALLER}/ubuntu-${REL}-live-server-amd64.iso}"
-OUT_ISO="${OUT_ISO:-${INSTALLER}/ubuntu-${REL}-live-server-mist-hyperv-amd64.iso}"
+OUT_ISO="${OUT_ISO:-${INSTALLER}/ubuntu-${REL}-live-server-haar-hyperv-amd64.iso}"
 WORKDIR="${WORKDIR:-${INSTALLER}/build/hyperv-remaster-work}"
 
 log() { echo "[build-hyperv-single-iso] $*"; }
@@ -106,14 +106,14 @@ log "rendering Hyper-V user-data"
 
 META="${WORKDIR}/meta-data"
 cat >"$META" <<'META'
-instance-id: mist-hyperv-nocloud-1
-local-hostname: mist-hyperv
+instance-id: haar-hyperv-nocloud-1
+local-hostname: haar-hyperv
 META
 
 EXTRA="${WORKDIR}/installer-extra"
 mkdir -p "$EXTRA"
-install -m 0755 "${ROOT}/scripts/mist-first-boot-unattended.sh" "${EXTRA}/mist-first-boot-unattended.sh"
-install -m 0644 "${ROOT}/systemd/mist-first-boot-unattended.service" "${EXTRA}/mist-first-boot-unattended.service"
+install -m 0755 "${ROOT}/scripts/haar-first-boot-unattended.sh" "${EXTRA}/haar-first-boot-unattended.sh"
+install -m 0644 "${ROOT}/systemd/haar-first-boot-unattended.service" "${EXTRA}/haar-first-boot-unattended.service"
 {
   printf 'JOG_UNATTEND_IFACE=%q\n' "$JOG_UNATTEND_IFACE"
   printf 'JOG_UNATTEND_IMAGING_IP=%q\n' "$JOG_UNATTEND_IMAGING_IP"
@@ -124,8 +124,8 @@ install -m 0644 "${ROOT}/systemd/mist-first-boot-unattended.service" "${EXTRA}/m
   printf 'JOG_UNATTEND_ROUTER=%q\n' "$JOG_UNATTEND_ROUTER"
   printf 'JOG_UNATTEND_NEXT_SERVER=%q\n' "$JOG_UNATTEND_NEXT_SERVER"
   printf 'JOG_UNATTEND_DHCP_BOOTFILE=%q\n' "$JOG_UNATTEND_DHCP_BOOTFILE"
-} >"${EXTRA}/mist-unattended-network.env"
-chmod 0600 "${EXTRA}/mist-unattended-network.env"
+} >"${EXTRA}/haar-unattended-network.env"
+chmod 0600 "${EXTRA}/haar-unattended-network.env"
 
 GRUB_PATCH="${WORKDIR}/grub.cfg"
 LOOP_PATCH="${WORKDIR}/loopback.cfg"
@@ -162,9 +162,9 @@ xorriso \
   -map "$LOOP_PATCH" /boot/grub/loopback.cfg \
   -map "${AUTO}/user-data.hyperv" /nocloud/user-data \
   -map "$META" /nocloud/meta-data \
-  -map "${EXTRA}/mist-first-boot-unattended.sh" /installer-extra/mist-first-boot-unattended.sh \
-  -map "${EXTRA}/mist-first-boot-unattended.service" /installer-extra/mist-first-boot-unattended.service \
-  -map "${EXTRA}/mist-unattended-network.env" /installer-extra/mist-unattended-network.env \
+  -map "${EXTRA}/haar-first-boot-unattended.sh" /installer-extra/haar-first-boot-unattended.sh \
+  -map "${EXTRA}/haar-first-boot-unattended.service" /installer-extra/haar-first-boot-unattended.service \
+  -map "${EXTRA}/haar-unattended-network.env" /installer-extra/haar-unattended-network.env \
   -boot_image any replay
 
 [[ -s "$OUT_ISO" ]] || { log "output ISO missing or empty"; exit 1; }

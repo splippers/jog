@@ -1,7 +1,0 @@
-[Unit]
-Description=Brume — re-assert the imaging NIC address if it was cleared
-Documentation=file:/usr/local/sbin/mist-imaging-nic-guard.sh
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/mist-imaging-nic-guard.sh

@@ -30,14 +30,14 @@ at startup, so reboots resume the pipeline.
 | `Install-JOGDriverPack.ps1` | Manual one-model handoff; installs VMD + detected model pack |
 | `JOGDriverHandoff.bat` | Batch wrapper for the manual first-logon handoff |
 | `SetupComplete.cmd` | OOBE entry point |
-| `mist-provisioning.example.json` | Configuration schema example |
+| `haar-provisioning.example.json` | Configuration schema example |
 
 ---
 
 ## Configuration
 
-The appliance renders the real `mist-provisioning.json` from
-`mist/config/mist-provisioning.env.example`. See `docs/CORPORATE-PROVISIONING.md` for the full schema and the
+The appliance renders the real `haar-provisioning.json` from
+`haar/config/haar-provisioning.env.example`. See `docs/CORPORATE-PROVISIONING.md` for the full schema and the
 security model.
 
 Minimum useful air-gapped config:
@@ -133,7 +133,7 @@ The fleet path is the catalog sync, run from a Windows 11 workstation with inter
 It queries the read-only FOG model API, resolves Dell/HP catalog packs for the registered models, extracts
 the INF trees, and writes `manifest.json`. The device installs the `VMD` base pack plus its model pack.
 The share is read-only for the `drivers` account used by the device; the upload account is `driveradmin`.
-Do not put either password in this repository. See `mist/docs/DRIVERS.md` for the API, catalog, and manifest
+Do not put either password in this repository. See `haar/docs/DRIVERS.md` for the API, catalog, and manifest
 details.
 
 For a single already-extracted pack, the legacy uploader still works:

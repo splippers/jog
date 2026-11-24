@@ -15,7 +15,7 @@ This is the appliance-side runbook. The Windows-side state machine and the full 
 PXE → JOS → FOG multicast → image written
                                │
                                ▼
-              /images/postdownloadscripts/mist-inject-provisioner.sh
+              /images/postdownloadscripts/haar-inject-provisioner.sh
               copies C:\ProgramData\Brume\* and SetupComplete.cmd
                                │
                                ▼
@@ -26,21 +26,21 @@ The appliance provides:
 
 | Piece | Script | Output |
 |---|---|---|
-| Driver share | `mist-driver-share.sh` | Samba `[Drivers]`, read/write accounts, `/etc/mist/driver-share.env` |
-| Driver model API | `mist-model-api-setup.sh` | Read-only FOG inventory API for the Windows driver sync |
-| Multicast auto-join | `mist-autojoin-setup.sh` | `/fog/service/mist-autojoin.php`; default PXE entry joins a waiting session |
-| Multicast profile | `mist-multicast-tune.sh` | FOG `nfsGroupMembers` + `globalSettings`, including rendezvous |
-| Configuration | `mist-corporate-setup.sh` | `/etc/mist/provisioning.env` (0600) |
-| Payload installer | `mist-install-provisioner.sh` | `/images/postdownloadscripts/mist-provisioner/` + FOG hook |
-| Post-FOG orchestration | `mist-post-fog-setup.sh` | Applies the above after native FOG finishes |
-| Health check | `mist-doctor.sh` | Secure Boot chain + corporate checks |
+| Driver share | `haar-driver-share.sh` | Samba `[Drivers]`, read/write accounts, `/etc/haar/driver-share.env` |
+| Driver model API | `haar-model-api-setup.sh` | Read-only FOG inventory API for the Windows driver sync |
+| Multicast auto-join | `haar-autojoin-setup.sh` | `/fog/service/haar-autojoin.php`; default PXE entry joins a waiting session |
+| Multicast profile | `haar-multicast-tune.sh` | FOG `nfsGroupMembers` + `globalSettings`, including rendezvous |
+| Configuration | `haar-corporate-setup.sh` | `/etc/haar/provisioning.env` (0600) |
+| Payload installer | `haar-install-provisioner.sh` | `/images/postdownloadscripts/haar-provisioner/` + FOG hook |
+| Post-FOG orchestration | `haar-post-fog-setup.sh` | Applies the above after native FOG finishes |
+| Health check | `haar-doctor.sh` | Secure Boot chain + corporate checks |
 
 ---
 
 ## 2. Prerequisites
 
-- Brume installed and native FOG finished (`/etc/mist/fog-native.done`).
-- `/etc/mist/mist.env` has the imaging NIC and IPs finalised.
+- Brume installed and native FOG finished (`/etc/haar/fog-native.done`).
+- `/etc/haar/haar.env` has the imaging NIC and IPs finalised.
 - Driver packs synced from the FOG model inventory — see [`DRIVERS.md`](DRIVERS.md). The Windows
   workstation needs internet access to the Dell/HP catalogs; the appliance does not.
 - AD/Entra prerequisites from the integration doc: target OU, delegated join account (the fleet default)
@@ -53,18 +53,18 @@ The appliance provides:
 ### 3.1 Driver share
 
 ```bash
-sudo mist-driver-share.sh --check
-sudo mist-driver-share.sh --apply
-sudo mist-driver-share.sh --rotate     # new passwords
+sudo haar-driver-share.sh --check
+sudo haar-driver-share.sh --apply
+sudo haar-driver-share.sh --rotate     # new passwords
 ```
 
 This creates:
 
 - Unix groups `jogdrivers` (read) and `jogdriveradmin` (write), and the `jogshare` force-user.
 - Samba accounts `drivers` (read-only) and `driveradmin` (write).
-- `/srv/mist/drivers` (2775, `jogshare:jogdrivers`).
-- `/etc/samba/mist-drivers.conf` and an `include` line in `/etc/samba/smb.conf`.
-- `/etc/mist/driver-share.env` (0600) with the generated passwords.
+- `/srv/haar/drivers` (2775, `jogshare:jogdrivers`).
+- `/etc/samba/haar-drivers.conf` and an `include` line in `/etc/samba/smb.conf`.
+- `/etc/haar/driver-share.env` (0600) with the generated passwords.
 
 If `smb.conf` already contains an inline `[Drivers]` section, `--apply` leaves it untouched and exits
 non-zero. Point `JOG_DRIVER_SHARE_PATH` at that path, or remove the inline section and re-run. `--rotate`
@@ -76,16 +76,16 @@ management network).
 ### 3.2 Provisioning configuration
 
 ```bash
-sudo mist-corporate-setup.sh
+sudo haar-corporate-setup.sh
 ```
 
-It writes `/etc/mist/provisioning.env` (0600) and, if enabled, runs the payload installer. The fields are
-documented in [`config/mist-provisioning.env.example`](../config/mist-provisioning.env.example).
+It writes `/etc/haar/provisioning.env` (0600) and, if enabled, runs the payload installer. The fields are
+documented in [`config/haar-provisioning.env.example`](../config/haar-provisioning.env.example).
 
 The non-interactive defaults use `corp.example.com`, `OU=Workstations,OU=Brume,DC=corp,DC=example,DC=com`,
 and the example group list. Replace those with the real AD values before a device resumes enrollment;
 the air-gapped handoff uses the domain and OU from this config. Re-run
-`sudo mist-install-provisioner.sh` after editing so newly imaged devices receive the updated payload.
+`sudo haar-install-provisioner.sh` after editing so newly imaged devices receive the updated payload.
 
 Key choices:
 
@@ -102,14 +102,14 @@ Key choices:
 ### 3.3 Multicast profile
 
 ```bash
-sudo mist-multicast-tune.sh --check
-sudo mist-multicast-tune.sh --apply
+sudo haar-multicast-tune.sh --check
+sudo haar-multicast-tune.sh --apply
 ```
 
 It sets `ngmMaxClients=100`, `ngmMaxBitrate=800m`, `FOG_UDPCAST_MAXWAIT=3` minutes,
 `FOG_MULTICAST_MAX_SESSIONS=64`, `FOG_MULTICAST_DUPLEX=--full-duplex`, the interface, and
 `FOG_MULTICAST_RENDEZVOUS` (defaults to the imaging interface's IPv4 address, `10.99.0.1` for `enp2s0`).
-It backs up `nfsGroupMembers` + `globalSettings` to `/var/backups/mist/` first. The arithmetic and network
+It backs up `nfsGroupMembers` + `globalSettings` to `/var/backups/haar/` first. The arithmetic and network
 checklist are in [`jog-jos/docs/MULTICAST-100.md`](https://github.com/splippers/jog-jos/blob/main/docs/MULTICAST-100.md).
 
 The rendezvous address must match the address the FOS client uses for `$storageip`. A mismatch makes
@@ -121,11 +121,11 @@ after applying the profile; the sender command is built when the session starts.
 ### 3.4 Default PXE auto-join
 
 ```bash
-sudo mist-autojoin-setup.sh --check
-sudo mist-autojoin-setup.sh --apply
+sudo haar-autojoin-setup.sh --check
+sudo haar-autojoin-setup.sh --apply
 ```
 
-Installs `/fog/service/mist-autojoin.php`. On the default JOS PXE entry, the client asks this endpoint
+Installs `/fog/service/haar-autojoin.php`. On the default JOS PXE entry, the client asks this endpoint
 before the normal FOG handshake. If exactly one multicast session is still in its join window, the
 endpoint creates the per-host multicast association; JOS then starts the normal FOS client and joins
 without a menu selection or a FOG login. An existing queued task is left alone. If nothing is waiting,
@@ -134,18 +134,18 @@ than guessing.
 
 The endpoint is MAC-resolved like FOG's own service endpoints and is restricted to
 `JOG_AUTOJOIN_ALLOW_NET` (default `10.99.0.0/24`, derived from `JOG_IMAGING_IP`/`JOG_IMAGING_PREFIX`).
-Set `JOG_AUTOJOIN_ENABLE=1` to have `mist-post-fog-setup.sh` install it automatically. `mist-doctor.sh`
+Set `JOG_AUTOJOIN_ENABLE=1` to have `haar-post-fog-setup.sh` install it automatically. `haar-doctor.sh`
 checks the endpoint.
 
 ### 3.5 Install the payload
 
 ```bash
-sudo mist-install-provisioner.sh
-sudo mist-install-provisioner.sh --check
+sudo haar-install-provisioner.sh
+sudo haar-install-provisioner.sh --check
 ```
 
-This renders `/images/postdownloadscripts/mist-provisioner/mist-provisioning.json`, copies the PowerShell
-payload, installs `mist-inject-provisioner.sh`, and appends a source line to
+This renders `/images/postdownloadscripts/haar-provisioner/haar-provisioning.json`, copies the PowerShell
+payload, installs `haar-inject-provisioner.sh`, and appends a source line to
 `/images/postdownloadscripts/fog.postdownload`.
 
 The rendered config contains the driver-share read password. In `AirGapped` mode the join password is
@@ -158,7 +158,7 @@ the imaging network.
 
 ## 4. One-shot profile
 
-Set these in `/etc/mist/mist.env` before `mist-provision-stack.sh`:
+Set these in `/etc/haar/haar.env` before `haar-provision-stack.sh`:
 
 ```bash
 JOG_DRIVER_SHARE_ENABLE=1
@@ -168,12 +168,12 @@ JOG_MULTICAST_TUNE=1
 JOG_PROVISIONING_ENABLE=1
 ```
 
-`mist-provision-stack.sh` applies the profile immediately if FOG is already installed. Otherwise
-`mist-fog-install-once.sh` calls `mist-post-fog-setup.sh` when the native install finishes. Re-run manually
+`haar-provision-stack.sh` applies the profile immediately if FOG is already installed. Otherwise
+`haar-fog-install-once.sh` calls `haar-post-fog-setup.sh` when the native install finishes. Re-run manually
 at any time:
 
 ```bash
-sudo mist-post-fog-setup.sh
+sudo haar-post-fog-setup.sh
 ```
 
 ---
@@ -182,27 +182,27 @@ sudo mist-post-fog-setup.sh
 
 ```bash
 # Secure Boot chain + corporate checks
-sudo mist-doctor.sh
+sudo haar-doctor.sh
 
 # Strict corporate checks
-sudo Brume_CORPORATE_STRICT=1 mist-doctor.sh
+sudo Brume_CORPORATE_STRICT=1 haar-doctor.sh
 
 # Share read/write as the two accounts
 smbclient //127.0.0.1/Drivers -U 'drivers%<password>' -c 'ls'
 smbclient //127.0.0.1/Drivers -U 'driveradmin%<password>' -c 'mkdir .t; rmdir .t'
 
 # FOG values, including the rendezvous address
-sudo mist-multicast-tune.sh --check
+sudo haar-multicast-tune.sh --check
 
 # Default PXE auto-join endpoint
-sudo mist-autojoin-setup.sh --check
+sudo haar-autojoin-setup.sh --check
 
 # Model API and a sample inventory response
 curl -fsS http://127.0.0.1:8089/healthz
-sudo mist-model-api-setup.sh --check
+sudo haar-model-api-setup.sh --check
 
 # Payload
-sudo mist-install-provisioner.sh --check
+sudo haar-install-provisioner.sh --check
 ```
 
 On the imaged device, after first boot:
@@ -226,14 +226,14 @@ recovery password visible in AD under the computer object's `msFVE-RecoveryInfor
 |---|---|
 | `0x800704F8` / `0x80070569` on the driver share | Windows 11 24H2 blocks guest SMB; use the `drivers` credentials, not guest |
 | Driver stage `DRIVERS_PENDING` | Share reachable? `manifest.json` present? `Drivers\<Model>` exists? INF files extracted? |
-| Model API unhealthy | `systemctl status mist-model-api`; `curl http://127.0.0.1:8089/healthz`; rerun `mist-model-api-setup.sh --apply` |
+| Model API unhealthy | `systemctl status haar-model-api`; `curl http://127.0.0.1:8089/healthz`; rerun `haar-model-api-setup.sh --apply` |
 | Driver sync finds no pack | Check the model API inventory, catalog network access, and `-PlanOnly` output |
 | `AWAITING_CORPORATE` after imaging | Expected in `AirGapped` mode; connect to Corporate and run the desktop resume shortcut |
 | Domain join `DOMAIN_JOIN_PENDING` | Credential delegated to the OU? Offline blob present and per-device? DNS/line of sight? |
 | `HYBRID_JOIN_PENDING` | `dsregcmd /status`; SCP, DNS, `enterpriseregistration.windows.net` |
 | `GROUPS_PENDING` | Offline join: run `Add-JOGComputerGroups.ps1` from a management host |
 | `BITLOCKER_PENDING` | TPM ready? GPO allows BitLocker? AD escrow permitted? |
-| No `C:\ProgramData\Brume` after imaging | Did the post-download hook run? Check the FOG task log for `[mist-inject]` |
+| No `C:\ProgramData\Brume` after imaging | Did the post-download hook run? Check the FOG task log for `[haar-inject]` |
 | Provisioner not resuming | `Get-ScheduledTask BrumeProvisioning`; the task runs at startup as SYSTEM |
 
 ---

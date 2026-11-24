@@ -1,0 +1,12 @@
+[Unit]
+Description=Brume — native FOG install (one-shot, after haar.env is ready)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/haar-fog-install-once.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Brume Chromium
+Comment=FOG UI + imaging/system status tabs
+Exec=env GDK_BACKEND=x11 /usr/local/bin/chromium-haar.sh
+X-GNOME-Autostart-enabled=true
+Terminal=false

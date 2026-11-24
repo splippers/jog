@@ -9,7 +9,7 @@ autoinstall:
   refresh-installer:
     update: false
   identity:
-    hostname: mist-base
+    hostname: haar-base
     username: jogadmin
     password: '@PASSWORD@'
   ssh:
@@ -35,6 +35,6 @@ autoinstall:
     - ethtool
   late-commands:
     - curtin in-target --target=/target -- bash -lc 'git clone https://github.com/splippers/Brume.git /opt/Brume || (cd /opt/Brume && git pull || true)'
-    - curtin in-target --target=/target -- install -m 0755 /opt/Brume/installer/mist-install-wizard.sh /usr/local/sbin/mist-install-wizard.sh
-    - curtin in-target --target=/target -- install -m 0644 /opt/Brume/installer/motd/mist-remind.sh /etc/profile.d/mist-remind.sh
-    - curtin in-target --target=/target -- env Brume_SKIP_SYSTEMD=1 bash /opt/Brume/install/mist-install.sh || true
+    - curtin in-target --target=/target -- install -m 0755 /opt/Brume/installer/haar-install-wizard.sh /usr/local/sbin/haar-install-wizard.sh
+    - curtin in-target --target=/target -- install -m 0644 /opt/Brume/installer/motd/haar-remind.sh /etc/profile.d/haar-remind.sh
+    - curtin in-target --target=/target -- env Brume_SKIP_SYSTEMD=1 bash /opt/Brume/install/haar-install.sh || true

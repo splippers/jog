@@ -1,4 +1,4 @@
-# Install to /etc/lightdm/lightdm.conf.d/50-mist-autologin.conf
+# Install to /etc/lightdm/lightdm.conf.d/50-haar-autologin.conf
 # Replace USERNAME with the kiosk account (e.g. jogadmin).
 #
 # Uses ubuntu-xorg (X11) — not the default ubuntu (Wayland) session — so Chromium and

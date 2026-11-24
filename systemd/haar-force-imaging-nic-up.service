@@ -1,0 +1,12 @@
+[Unit]
+Description=Brume — bring the imaging NIC up with its static IP, regardless of carrier
+After=network-pre.target systemd-udevd.service
+Before=dnsmasq.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/haar-force-imaging-nic-up.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

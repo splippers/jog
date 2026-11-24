@@ -1,0 +1,29 @@
+[Unit]
+Description=Brume FOG model inventory API
+Documentation=https://github.com/splippers/haar
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fogproject
+Group=fogproject
+ExecStart=/usr/bin/python3 /usr/local/bin/haar-model-api.py --serve
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+ReadOnlyPaths=/etc/haar/model-api.env /etc/haar/model-api.my.cnf
+
+[Install]
+WantedBy=multi-user.target
