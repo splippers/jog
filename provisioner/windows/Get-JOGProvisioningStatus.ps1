@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Show the JOG provisioning state, stage table, domain/Entra status, and BitLocker state.
+    Show the MIST provisioning state, stage table, domain/Entra status, and BitLocker state.
 #>
 [CmdletBinding()]
 param([string]$Root = $PSScriptRoot)
@@ -19,7 +19,7 @@ if (-not (Test-Path $statePath)) {
 # Print the saved state-machine checkpoint and its per-stage results.
 $state = Get-Content -Path $statePath -Raw | ConvertFrom-Json
 Write-Host ""
-Write-Host "JOG provisioning status" -ForegroundColor Cyan
+Write-Host "MIST provisioning status" -ForegroundColor Cyan
 Write-Host "=======================" -ForegroundColor DarkCyan
 Write-Host ("Computer : {0}" -f (Get-JOGProperty $state 'ComputerName' $env:COMPUTERNAME))
 Write-Host ("State    : {0}" -f (Get-JOGProperty $state 'State' 'unknown'))

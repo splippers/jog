@@ -1,4 +1,4 @@
-# Copy to /etc/netplan/99-jog-usb.yaml and apply with: sudo netplan apply
+# Copy to /etc/netplan/99-mist-usb.yaml and apply with: sudo netplan apply
 #
 # Goals:
 # - USB3 NIC: static IP on isolated imaging subnet only (no default route here).

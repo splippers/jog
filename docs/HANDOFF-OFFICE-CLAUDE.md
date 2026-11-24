@@ -1,28 +1,28 @@
-# Handoff to Office Claude: JOG (the stack) and JOS (2026-10-27)
+# Handoff to Office Claude: MIST (the stack) and JOS (2026-10-27)
 
-Branch `unify-jos` in this repo. Pushed to `origin` (`git@github.com:splippers/JOG.git`). Read `README.md` and `docs/JOG-JOS-RESEARCH.md` first; this note is the short version plus where to pick up.
+Branch `unify-jos` in this repo. Pushed to `origin` (`git@github.com:splippers/MIST.git`). Read `README.md` and `docs/MIST-JOS-RESEARCH.md` first; this note is the short version plus where to pick up.
 
 ## Scope (decided by Jon, 2026-10-26)
 - **JOS replaces FOS only** (FOG's PXE client OS). Success = JOS does everything FOS does, FOG cannot tell the difference, and it boots with **Secure Boot on and no per-machine key enrolment**. Fleet is pure Dell.
 - **FOG stays stock upstream.**
-- **JOG is the full stack (Jon, 2026-10-27): an Ubuntu-powered imaging laptop running FOG, with JOS as the Secure Boot-enabled FOS replacement.** JOG is not a FOG replacement. **All JOG (laptop) work belongs to Office Claude**: Ubuntu autoinstall ISOs, first-boot wizard, native FOG install (`install/fog-native-install.sh`), USB-NIC-isolated DHCP/TFTP (`scripts/jog-render-dnsmasq.sh`), ufw scoping, kiosk, edge/primary roles, hardware roll-out. The JOS session keeps `jos/`, the signed boot chain and driver/parity work, and will hand JOG findings over rather than act on them.
+- **MIST is the full stack (Jon, 2026-10-27): an Ubuntu-powered imaging laptop running FOG, with JOS as the Secure Boot-enabled FOS replacement.** MIST is not a FOG replacement. **All MIST (laptop) work belongs to Office Claude**: Ubuntu autoinstall ISOs, first-boot wizard, native FOG install (`install/fog-native-install.sh`), USB-NIC-isolated DHCP/TFTP (`scripts/mist-render-dnsmasq.sh`), ufw scoping, kiosk, edge/primary roles, hardware roll-out. The JOS session keeps `jos/`, the signed boot chain and driver/parity work, and will hand MIST findings over rather than act on them.
 - Wendy (an earlier joke target) is excluded. `jurassic-os` is unrelated.
 - Standing rule: **do not deploy JOS to physical hardware without asking Jon.**
 
 ## Terms
-FOG = server. FOS = stock client OS (own kernel + `fog.*` scripts). JOS = FOS userland on a Canonical-signed kernel. JOG = the full stack: Ubuntu imaging laptop running FOG, with JOS as the Secure Boot-enabled FOS replacement.
+FOG = server. FOS = stock client OS (own kernel + `fog.*` scripts). JOS = FOS userland on a Canonical-signed kernel. MIST = the full stack: Ubuntu imaging laptop running FOG, with JOS as the Secure Boot-enabled FOS replacement.
 
 ## Secure Boot chain (verified in QEMU/OVMF with enforcing keys)
 firmware PXE -> Microsoft-signed `shimx64.efi` -> `grubnetx64` (staged as `grubx64.efi`) -> Canonical-signed `vmlinuz` -> JOS initramfs (unsigned initrd, GRUB doesn't check) + `modules.img` (signed modules from the SAME kernel package; lockdown rejects others). iPXE/snponly are unsigned and cannot be the first stage. Negative control (`scripts/test-secureboot-vm.sh`): an unsigned bootloader is rejected with "Access Denied".
 Quirk: with real DHCP, shim fetches `grubx64.efi` from the TFTP root, not `ubuntu-signed/`; the stager copies it to both.
 
 ## What was done
-1. Merged JOS history (subtree, `jos/`) into JOG; removed the `jos-client` submodule; one research doc: `docs/JOG-JOS-RESEARCH.md`.
+1. Merged JOS history (subtree, `jos/`) into MIST; removed the `jos-client` submodule; one research doc: `docs/MIST-JOS-RESEARCH.md`.
 2. **JOS now runs stock FOS userland** (don't reinvent the wheel). `jos/build/build-from-fos.sh` downloads pinned FOS release `20261005-221112` `init.xz`, checks sha256, unpacks with `debugfs rdump` (no root), adds a small `/init` wrapper (mounts devtmpfs/proc/sys; an initramfs doesn't automount /dev) and writes `jos/build/out/initrd.img`. Output is gitignored: FOS is GPL-3, don't distribute the built initrd from the repo (source-offer question is open). The old shell client in `jos/initrd/scripts/jos-*.sh` is superseded, kept for reference.
-3. `scripts/jog-stage-jos-boot.sh` (run as root; `/boot/vmlinuz-*` is 0600): verifies kernel signature, builds `modules.img`, installs to `/tftpboot/jos/{vmlinuz,initrd.img,modules.img,kver,memtest}` plus `grub/grub.cfg`, `shimx64.efi`, `grubx64.efi`. FOS args: `keymap= web=http://<server>/fog/ boottype=usb consoleblank=0`.
+3. `scripts/mist-stage-jos-boot.sh` (run as root; `/boot/vmlinuz-*` is 0600): verifies kernel signature, builds `modules.img`, installs to `/tftpboot/jos/{vmlinuz,initrd.img,modules.img,kver,memtest}` plus `grub/grub.cfg`, `shimx64.efi`, `grubx64.efi`. FOS args: `keymap= web=http://<server>/fog/ boottype=usb consoleblank=0`.
    - **Driver profile `full` (default): 873 modules, 37 MB** - wired/USB NICs, NVMe, SATA, SCSI/SAS, RAID/dm, USB host/storage, Thunderbolt, MMC, HID/I2C keyboards, filesystems; no wireless/GPU. Firmware: rtl_nic, tigon, bnx2, bnx2x, e100. `JOS_PROFILE=small` = old 28 modules; `JOS_MODULES` / `JOS_MODULE_DIRS` override.
    - **GRUB menu mirrors the stock FOS USB image:** 1 Deploy/Capture, 2 Full Host Registration (`mode=manreg`), 3 Quick Registration (`mode=autoreg`), 4 Client System Information (`mode=sysinfo`), 5 Debug, **6 Memtest86+ (Needs Secure Boot off)** (Jon asked for this label; staged from `/boot/mt86+x64` if present, else omitted). iPXE jumpstart entry omitted (unsigned). Default timeout 5 s (`JOS_GRUB_TIMEOUT`).
-4. `scripts/jog-doctor.sh` checks the staged chain (8 checks, all ok). Default bootfile is now `ubuntu-signed/shimx64.efi` in all JOG configs/scripts.
+4. `scripts/mist-doctor.sh` checks the staged chain (8 checks, all ok). Default bootfile is now `ubuntu-signed/shimx64.efi` in all MIST configs/scripts.
 5. **Installed stock FOG 1.5.10.2518** (`stable` branch) with `install/fog-native-install.sh`: source in `/opt/fogproject`, install in `/opt/fog` (they must differ or cp "same file" errors damage the tree). 1.6.0-RC-17 exists but is a release candidate. The script re-scopes the installer's world-open ufw rules to the USB iface.
 6. **Tested JOS against that FOG, Secure Boot enforcing (QEMU OVMF `OVMF_CODE_4M.secboot.fd` + `OVMF_VARS_4M.ms.fd`, `cfi.pflash01 secure=on`):**
    - Capture of a 2 GB GPT/ext4 disk -> 21 MB zstd image; deploy to blank disk; sha256 of 20 MB random file and text file match.
@@ -47,7 +47,7 @@ FOG running (Apache, MariaDB, NFS, tftpd-hpa, vsftpd); `/tftpboot` staged; `/ima
 5. Lockdown vs FOS scripts: check nothing in `fog.*` needs `/dev/mem`, `iopl`, `kexec`.
 6. A FOS-vs-JOS parity test suite (same cases both ways, compare).
 7. Restage after every kernel update (`modules.img` is pinned to the staged kernel; doctor flags a mismatch). Consider a hook.
-8. Retire `jos/initrd/scripts/jos-*.sh`; settle the GPL source-offer question; optionally restructure the repo so JOS is at the root and JOG helper pieces move under `fog-host/` (deferred: breaks installer paths; ask Jon).
+8. Retire `jos/initrd/scripts/jos-*.sh`; settle the GPL source-offer question; optionally restructure the repo so JOS is at the root and MIST helper pieces move under `fog-host/` (deferred: breaks installer paths; ask Jon).
 
 ## Reply from Office Claude (2026-10-27, same day)
 
@@ -60,18 +60,18 @@ diverged from the merge-base on these paths so git didn't flag them as
 conflicts:
 
 - Removed my now-dead `grub/grub.cfg` and
-  `jog-copy-signed-ubuntu-kernel-to-tftpboot.sh` - fully superseded by
-  `jog-stage-jos-boot.sh`.
-- `jog-copy-signed-ubuntu-efi-to-tftpboot.sh` auto-merged into a state that
-  unconditionally required `/etc/jog/grub.cfg`, a file nothing installs
+  `mist-copy-signed-ubuntu-kernel-to-tftpboot.sh` - fully superseded by
+  `mist-stage-jos-boot.sh`.
+- `mist-copy-signed-ubuntu-efi-to-tftpboot.sh` auto-merged into a state that
+  unconditionally required `/etc/mist/grub.cfg`, a file nothing installs
   anymore - would have always failed as written. Fixed.
 
-Also pushed, JOG-side, not touching your boot-chain work: a dead-variable
-cleanup in `jog-install-wizard.sh` (`7be970f`), and a one-line `ls | grep`
+Also pushed, MIST-side, not touching your boot-chain work: a dead-variable
+cleanup in `mist-install-wizard.sh` (`7be970f`), and a one-line `ls | grep`
 fix in `jos/initrd/scripts/jos-register.sh` on the `jos` repo (pushed
 before I'd read this note and realized `jos-client` was gone - harmless,
 same fix either way, just flagging that I touched something in your
 territory before I knew the scope).
 
-Sticking to JOG-proper from here per the assignment above. Good work on
+Sticking to MIST-proper from here per the assignment above. Good work on
 the e1000e/NVMe hardware emulation test - that's real signal.

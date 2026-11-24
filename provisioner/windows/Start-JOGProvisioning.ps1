@@ -1,14 +1,14 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    JOG corporate provisioning orchestrator.
+    MIST corporate provisioning orchestrator.
 
 .DESCRIPTION
-    Runs as SYSTEM from SetupComplete.cmd and from the JOGProvisioning scheduled task.
-    Stages are idempotent and resumable. State lives in C:\ProgramData\JOG\Provisioning.json.
+    Runs as SYSTEM from SetupComplete.cmd and from the MISTProvisioning scheduled task.
+    Stages are idempotent and resumable. State lives in C:\ProgramData\MIST\Provisioning.json.
 
 .PARAMETER ConfigPath
-    Path to the rendered jog-provisioning.json.
+    Path to the rendered mist-provisioning.json.
 
 .PARAMETER Resume
     Accepted for the scheduled task / SetupComplete call. The orchestrator always resumes from state.
@@ -20,11 +20,11 @@
     Do not restart the computer; useful for lab inspection. The state will remain at the stage boundary.
 
 .PARAMETER NoResumeTask
-    Do not register the JOGProvisioning startup task. Lab only.
+    Do not register the MISTProvisioning startup task. Lab only.
 #>
 [CmdletBinding()]
 param(
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'jog-provisioning.json'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json'),
     [switch]$Resume,
     [switch]$Force,
     [switch]$NoReboot,
@@ -42,7 +42,7 @@ $statePath = Join-Path $script:JOGRoot 'Provisioning.json'
 New-Item -ItemType Directory -Force -Path $script:JOGLogDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $script:JOGRoot 'Secrets') | Out-Null
 
-Write-JOGLog "JOG provisioner starting"
+Write-JOGLog "MIST provisioner starting"
 Write-JOGLog "  config : $ConfigPath"
 Write-JOGLog "  state  : $statePath"
 Write-JOGLog "  log    : $script:JOGLogFile"
@@ -213,9 +213,9 @@ if ($state.Stages['INITIALISE'] -ne 'done' -or $Force) {
     if (-not $NoResumeTask) {
         try {
             Register-JOGResumeTask
-            Write-JOGLog "Registered scheduled task JOGProvisioning (AtStartup, SYSTEM)"
+            Write-JOGLog "Registered scheduled task MISTProvisioning (AtStartup, SYSTEM)"
         } catch {
-            Write-JOGLog "Could not register JOGProvisioning task: $($_.Exception.Message)" -Level ERROR
+            Write-JOGLog "Could not register MISTProvisioning task: $($_.Exception.Message)" -Level ERROR
             exit 1
         }
     }
@@ -232,9 +232,9 @@ if (-not $NoResumeTask -and $state.Stages['INITIALISE'] -eq 'done') {
     if (-not (Get-ScheduledTask -TaskName 'JOGProvisioning' -ErrorAction SilentlyContinue)) {
         try {
             Register-JOGResumeTask
-            Write-JOGLog "Re-registered scheduled task JOGProvisioning for the corporate resume"
+            Write-JOGLog "Re-registered scheduled task MISTProvisioning for the corporate resume"
         } catch {
-            Write-JOGLog "Could not register JOGProvisioning task: $($_.Exception.Message)" -Level ERROR
+            Write-JOGLog "Could not register MISTProvisioning task: $($_.Exception.Message)" -Level ERROR
             exit 1
         }
     }

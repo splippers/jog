@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Finish JOG provisioning on a device that was imaged on the air-gapped
+    Finish MIST provisioning on a device that was imaged on the air-gapped
     network.
 
 .DESCRIPTION
@@ -13,7 +13,7 @@
     and recovery-password escrow, restarting as needed.
 
 .PARAMETER ConfigPath
-    Rendered jog-provisioning.json. Default is beside this script.
+    Rendered mist-provisioning.json. Default is beside this script.
 
 .PARAMETER Credential
     Optional delegated domain-join credential. If omitted, Get-Credential
@@ -28,7 +28,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'jog-provisioning.json'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json'),
     [PSCredential]$Credential,
     [switch]$SkipConnectivityCheck,
     [switch]$NoReboot
@@ -68,7 +68,7 @@ if ($joinMode -notin @('Offline', 'Credential')) {
     exit 1
 }
 
-Write-Host 'JOG corporate enrollment resume' -ForegroundColor Cyan
+Write-Host 'MIST corporate enrollment resume' -ForegroundColor Cyan
 Write-Host "  device : $env:COMPUTERNAME"
 Write-Host "  domain : $domain"
 Write-Host "  mode   : $mode"
@@ -112,7 +112,7 @@ $plain = ''
 if ($joinMode -eq 'Credential') {
     if (-not $Credential) {
         $hint = [string](Get-JOGProperty $domainJoin 'User' '')
-        if ([string]::IsNullOrWhiteSpace($hint)) { $hint = "$domain\svc-jog-join" }
+        if ([string]::IsNullOrWhiteSpace($hint)) { $hint = "$domain\svc-mist-join" }
         $Credential = Get-Credential -UserName $hint -Message "Delegated domain-join account for $domain"
         if (-not $Credential) { exit 3 }
     }

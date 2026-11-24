@@ -22,7 +22,7 @@ installer/autoinstall/user-data.hyperv
 
 # Ubuntu live-server + CIDATA seeds produced by installer/*.sh
 installer/ubuntu-*-live-server-amd64.iso
-installer/jog-autoinstall-seed.iso
+installer/mist-autoinstall-seed.iso
 installer/**/*.iso
 
 # Hyper-V ISO remaster scratch (xorriso extract / staged files)

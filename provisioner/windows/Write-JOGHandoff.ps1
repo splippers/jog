@@ -18,7 +18,7 @@
 param(
     [Parameter(Mandatory)]$Config,
     [Parameter(Mandatory)][string]$LogFile,
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'jog-provisioning.json')
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'mist-provisioning.json')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,7 +36,7 @@ if (-not (Test-Path $resumeScript)) {
 }
 
 $lines = @(
-    'JOG - AWAITING CORPORATE ENROLLMENT',
+    'MIST - AWAITING CORPORATE ENROLLMENT',
     '====================================',
     '',
     "Device      : $env:COMPUTERNAME",
@@ -75,7 +75,7 @@ Set-JOGFileAcl -Path $handoffFile
 $publicDesktop = Join-Path $env:PUBLIC 'Desktop'
 if (-not (Test-Path $publicDesktop)) { $publicDesktop = 'C:\Users\Public\Desktop' }
 New-Item -ItemType Directory -Force -Path $publicDesktop | Out-Null
-Copy-Item -Path $handoffFile -Destination (Join-Path $publicDesktop 'JOG - Awaiting Corporate.txt') -Force
+Copy-Item -Path $handoffFile -Destination (Join-Path $publicDesktop 'MIST - Awaiting Corporate.txt') -Force
 
 $shortcutPath = Join-Path $publicDesktop 'Complete Corporate Enrollment.lnk'
 try {
@@ -84,7 +84,7 @@ try {
     $shortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
     $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$resumeScript`""
     $shortcut.WorkingDirectory = $PSScriptRoot
-    $shortcut.Description = 'Join this JOG-imaged device to Corporate and finish provisioning'
+    $shortcut.Description = 'Join this MIST-imaged device to Corporate and finish provisioning'
     $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,21"
     $shortcut.Save()
     Write-JOGLog "Created handoff shortcut: $shortcutPath" -LogFile $LogFile
@@ -95,14 +95,14 @@ try {
 # Record the handoff in the registry so inventory and support can see it
 # without reading the provisioning state file.
 try {
-    $key = 'HKLM:\SOFTWARE\JOG'
+    $key = 'HKLM:\SOFTWARE\MIST'
     New-Item -Path $key -Force | Out-Null
     Set-ItemProperty -Path $key -Name 'State' -Value 'AWAITING_CORPORATE' -Type String
     Set-ItemProperty -Path $key -Name 'PreparedAt' -Value (Get-Date).ToString('o') -Type String
     Set-ItemProperty -Path $key -Name 'Model' -Value ([string]$info.Model) -Type String
     Set-ItemProperty -Path $key -Name 'Serial' -Value ([string]$info.Serial) -Type String
 } catch {
-    Write-JOGLog "Could not write the JOG registry handoff state: $($_.Exception.Message)" -Level WARN -LogFile $LogFile
+    Write-JOGLog "Could not write the MIST registry handoff state: $($_.Exception.Message)" -Level WARN -LogFile $LogFile
 }
 
 # The resume phase prompts for the join password; do not leave it on an

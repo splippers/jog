@@ -1,10 +1,10 @@
 # Driver share and driver sync
 
-The JOG appliance serves vendor driver packs to the Windows provisioner over SMB. The device pulls its
+The MIST appliance serves vendor driver packs to the Windows provisioner over SMB. The device pulls its
 model pack and the VMD base pack during the `DRIVERS` stage, before domain join.
 
 The pack list comes from FOG's hardware inventory, not from a hand-maintained list. A Windows 11
-workstation queries the read-only JOG model API, resolves the latest Dell/HP driver-pack catalog entry for
+workstation queries the read-only MIST model API, resolves the latest Dell/HP driver-pack catalog entry for
 each registered model, extracts the INF tree, and publishes it to the share.
 
 ## Layout
@@ -56,21 +56,21 @@ The appliance exposes a read-only inventory API so the workstation does not need
 FOG API token:
 
 ```bash
-sudo jog-model-api-setup.sh --apply
-sudo jog-model-api-setup.sh --check
+sudo mist-model-api-setup.sh --apply
+sudo mist-model-api-setup.sh --check
 curl -fsS http://127.0.0.1:8089/healthz
 curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8089/api/models
 ```
 
 - Default endpoint: `http://192.168.254.1:8089/api/models` (the USB/workstation network).
 - The service binds `0.0.0.0:8089`; use `http://10.99.0.1:8089/api/models` from the imaging network.
-- Token file on the appliance: `/etc/jog/model-api.env` (0640 root:fogproject).
-- Token for the workstation: `C:\ProgramData\JOG\model-api.token`, or pass `-ApiToken`.
-- Retrieve the token on the appliance with `sudo jog-model-api-setup.sh --print-token`; do not commit it.
+- Token file on the appliance: `/etc/mist/model-api.env` (0640 root:fogproject).
+- Token for the workstation: `C:\ProgramData\MIST\model-api.token`, or pass `-ApiToken`.
+- Retrieve the token on the appliance with `sudo mist-model-api-setup.sh --print-token`; do not commit it.
 - The API reads the FOG `inventory` table (`iSysman`, `iSysproduct`, `iSysversion`, `iMbproductname`) and
   returns distinct models that have checked in.
 
-`jog-post-fog-setup.sh` installs the API when `JOG_MODEL_API_ENABLE=1`. `jog-doctor.sh` checks the service
+`mist-post-fog-setup.sh` installs the API when `JOG_MODEL_API_ENABLE=1`. `mist-doctor.sh` checks the service
 and `/healthz`.
 
 ## Sync packs from FOG inventory
@@ -118,15 +118,15 @@ Useful switches:
 | `-Force` | Re-download even when the cache has the pack |
 | `-KeepDownloads` | Keep the multi-gigabyte vendor downloads for diagnosis |
 | `-Minimal` | Drop the large `video`/`audio` trees and Linux `.so` files |
-| `-WorkDir` | Cache/catalog/extract directory; default `%ProgramData%\JOG\driver-sync` |
+| `-WorkDir` | Cache/catalog/extract directory; default `%ProgramData%\MIST\driver-sync` |
 | `-OS` | `Windows11` (default), `Windows10`, or `Auto` |
 | `-Vendor` | `All`, `Dell`, `HP`, or `Lenovo` |
 
-The script logs to `%ProgramData%\JOG\logs\fog-driver-sync-*.log`.
+The script logs to `%ProgramData%\MIST\logs\fog-driver-sync-*.log`.
 
 ## Run the sync on the appliance
 
-`jog-sync-driver-packs.sh` does the catalog work on the appliance itself, so no Windows workstation
+`mist-sync-driver-packs.sh` does the catalog work on the appliance itself, so no Windows workstation
 has to be online. It reads the FOG model inventory, downloads the newest Dell/HP Windows 11 x64 pack
 for each model (falling back to Windows 10 when the vendor has no Windows 11 pack), verifies the
 vendor SHA256 and size, extracts the pack, prunes it to the INF trees `pnputil` needs, and publishes
@@ -134,29 +134,29 @@ it to the `[Drivers]` share.
 
 ```bash
 # Resolve the models and packs without downloading
-sudo jog-sync-driver-packs.sh --plan-only
+sudo mist-sync-driver-packs.sh --plan-only
 
 # Download, extract, prune, publish, and update manifest.json
-sudo jog-sync-driver-packs.sh
+sudo mist-sync-driver-packs.sh
 
 # Limit the run
-sudo jog-sync-driver-packs.sh --model 'Latitude 3440'
-sudo jog-sync-driver-packs.sh --vendor Dell
+sudo mist-sync-driver-packs.sh --model 'Latitude 3440'
+sudo mist-sync-driver-packs.sh --vendor Dell
 
 # Drop the large video/audio trees and Linux .so files while publishing
-sudo jog-sync-driver-packs.sh --minimal
+sudo mist-sync-driver-packs.sh --minimal
 
 # Slim packs that are already on the share (dry run first)
-sudo jog-sync-driver-packs.sh --slim-existing --plan-only
-sudo jog-sync-driver-packs.sh --slim-existing
+sudo mist-sync-driver-packs.sh --slim-existing --plan-only
+sudo mist-sync-driver-packs.sh --slim-existing
 
 # Keep the vendor .exe/.cab instead of publishing an INF tree
-sudo jog-sync-driver-packs.sh --mode vendor
+sudo mist-sync-driver-packs.sh --mode vendor
 ```
 
 The default output is `<share>/<MODEL-SLUG>` (for example `LATITUDE-3440`) with a `pack.json` and a
 merged `manifest.json` at the share root. Vendor downloads are removed after a successful publish;
-pass `--keep-downloads` to retain them under `/tmp/opencode/jog-driver-sync/downloads`. The script
+pass `--keep-downloads` to retain them under `/tmp/opencode/mist-driver-sync/downloads`. The script
 uses `cabextract` first and `7z`/`unzip` as fallbacks; install `p7zip-full` if a pack is a 7z or
 InstallShield self-extractor.
 
@@ -214,8 +214,8 @@ pack plus the detected model pack. They are a fallback for a lab or a single mac
 | `drivers` | read-only | the Windows provisioner on the device |
 | `driveradmin` | read/write | the workstation running `Sync-FOGDriverPacks.ps1` |
 
-Both are Samba accounts created by `jog-driver-share.sh`. Their passwords live in
-`/etc/jog/driver-share.env` (0600) on the appliance. Do not commit them.
+Both are Samba accounts created by `mist-driver-share.sh`. Their passwords live in
+`/etc/mist/driver-share.env` (0600) on the appliance. Do not commit them.
 
 Guest access can be enabled for legacy clients, but Windows 11 24H2 blocks insecure guest SMB by default
 (`0x800704F8`). Use the `drivers` credentials; do not make guest access the fix.
@@ -267,11 +267,11 @@ deploy-tested on a factory-RAID machine.
 ## Permissions
 
 > On this appliance the live share is on the separate `/images` volume at
-> `/images/Drivers`; `/etc/jog/jog.env` sets `JOG_DRIVER_SHARE_PATH` to that path.
+> `/images/Drivers`; `/etc/mist/mist.env` sets `JOG_DRIVER_SHARE_PATH` to that path.
 > `/opt/thepermanentway/refmaterial/Drivers` is kept as a compatibility symlink.
 > Keep the share off the root LV: full vendor packs can exceed 15 GB.
 
-- Share path: `/srv/jog/drivers`, mode 2775, owner `jogshare:jogdrivers`.
+- Share path: `/srv/mist/drivers`, mode 2775, owner `jogshare:jogdrivers`.
 - `force user = jogshare`, `force group = jogdrivers`, `create mask = 0664`, `directory mask = 2775`.
 - `write list = @jogdriveradmin`; `read only = yes` for everyone else.
 - Guest access is optional (`JOG_DRIVER_ALLOW_GUEST`), not required by the provisioner.

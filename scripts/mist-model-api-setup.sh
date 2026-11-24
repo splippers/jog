@@ -1,0 +1,175 @@
+#!/bin/bash
+set -euo pipefail
+exec 2>>/tmp/mist_error.log
+
+# mist-model-api-setup.sh — install the read-only FOG model inventory API.
+#
+#   sudo mist-model-api-setup.sh --apply
+#   sudo mist-model-api-setup.sh --check
+#   sudo mist-model-api-setup.sh --print-token
+#
+# The API reads the FOG database through a MySQL option file and returns the
+# distinct hardware models that have checked in. Sync-FOGDriverPacks.ps1 uses
+# it to decide which vendor driver packs to download.
+#
+# Files:
+#   /usr/local/bin/mist-model-api.py
+#   /etc/mist/model-api.env         token + bind settings (0640 root:fogproject)
+#   /etc/mist/model-api.my.cnf      FOG DB credentials (0640 root:fogproject)
+#   /etc/systemd/system/mist-model-api.service
+
+log()  { echo "[mist-model-api-setup] $*"; }
+warn() { echo "[mist-model-api-setup] WARN: $*" >&2; }
+die()  { echo "[mist-model-api-setup] ERROR: $*" >&2; exit 1; }
+
+MODE=apply
+for arg in "$@"; do
+  case "$arg" in
+    --apply) MODE=apply ;;
+    --check) MODE=check ;;
+    --print-token) MODE=print-token ;;
+    -h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) die "unknown argument: $arg" ;;
+  esac
+done
+
+[[ "$(id -u)" -eq 0 ]] || die "run as root: sudo $0 --apply"
+
+ENV_FILE=/etc/mist/model-api.env
+CNF_FILE=/etc/mist/model-api.my.cnf
+SERVICE_FILE=/etc/systemd/system/mist-model-api.service
+BIN_FILE=/usr/local/bin/mist-model-api.py
+FOG_SETTINGS=/opt/fog/.fogsettings
+FOG_USER=fogproject
+FOG_GROUP=fogproject
+
+if [[ "$MODE" == "print-token" ]]; then
+  [[ -f "$ENV_FILE" ]] || die "missing $ENV_FILE; run --apply"
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  [[ -n "${JOG_MODEL_API_TOKEN:-}" ]] || die "JOG_MODEL_API_TOKEN is empty"
+  printf '%s\n' "$JOG_MODEL_API_TOKEN"
+  exit 0
+fi
+
+if [[ "$MODE" == "check" ]]; then
+  rc=0
+  [[ -f "$BIN_FILE" ]] || { warn "missing $BIN_FILE"; rc=1; }
+  [[ -f "$ENV_FILE" ]] || { warn "missing $ENV_FILE"; rc=1; }
+  [[ -f "$CNF_FILE" ]] || { warn "missing $CNF_FILE"; rc=1; }
+  [[ -f "$SERVICE_FILE" ]] || { warn "missing $SERVICE_FILE"; rc=1; }
+  if [[ -f "$BIN_FILE" && -f "$CNF_FILE" && -f "$ENV_FILE" ]]; then
+    if python3 "$BIN_FILE" --check; then :; else rc=1; fi
+  fi
+  if systemctl is-active --quiet mist-model-api.service; then
+    log "service active"
+  else
+    warn "mist-model-api.service is not active"
+    rc=1
+  fi
+  if command -v curl >/dev/null 2>&1; then
+    if curl -fsS --max-time 5 http://127.0.0.1:8089/healthz >/dev/null; then
+      log "health endpoint OK"
+    else
+      warn "health endpoint failed"
+      rc=1
+    fi
+  fi
+  [[ "$rc" -eq 0 ]] && log "check passed" || log "check found issues"
+  exit "$rc"
+fi
+
+id "$FOG_USER" >/dev/null 2>&1 || die "service account $FOG_USER does not exist (is FOG installed?)"
+[[ -f "$FOG_SETTINGS" ]] || die "missing $FOG_SETTINGS; is FOG installed?"
+command -v python3 >/dev/null 2>&1 || die "python3 is required"
+command -v mysql >/dev/null 2>&1 || die "mysql client is required"
+
+# shellcheck disable=SC1090
+source "$FOG_SETTINGS"
+DB_USER="${DB_user:-fogmaster}"
+DB_PASS="${DB_password:-}"
+DB_HOST="${DB_host:-localhost}"
+DB_NAME="${DB_name:-fog}"
+[[ -n "$DB_PASS" ]] || die "DB_password is empty in $FOG_SETTINGS"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SRC_BIN="${MIST_MODEL_API_SRC:-${JOG_MODEL_API_SRC:-$ROOT/scripts/mist-model-api.py}}"
+SRC_SERVICE="${MIST_MODEL_API_SERVICE_SRC:-${JOG_MODEL_API_SERVICE_SRC:-$ROOT/systemd/mist-model-api.service}}"
+[[ -f "$SRC_BIN" ]] || SRC_BIN=/usr/local/share/mist/scripts/mist-model-api.py
+[[ -f "$SRC_SERVICE" ]] || SRC_SERVICE=/usr/local/share/mist/systemd/mist-model-api.service
+[[ -f "$SRC_BIN" ]] || die "mist-model-api.py source not found"
+[[ -f "$SRC_SERVICE" ]] || die "mist-model-api.service source not found"
+
+install -d -m 0755 /etc/mist /usr/local/bin
+install -m 0755 "$SRC_BIN" "$BIN_FILE"
+install -m 0644 "$SRC_SERVICE" "$SERVICE_FILE"
+
+umask 077
+JOG_DB_USER="$DB_USER" JOG_DB_PASSWORD="$DB_PASS" JOG_DB_HOST="$DB_HOST" JOG_DB_NAME="$DB_NAME" \
+python3 - "$CNF_FILE" <<'PY'
+import os
+import sys
+
+path = sys.argv[1]
+password = os.environ["JOG_DB_PASSWORD"]
+# MySQL option files accept quoted values. Escape the two characters that
+# would otherwise end or alter the quoted value.
+password = password.replace("\\", "\\\\").replace('"', '\\"')
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write("[client]\n")
+    handle.write("user=%s\n" % os.environ["JOG_DB_USER"])
+    handle.write('password="%s"\n' % password)
+    handle.write("host=%s\n" % os.environ["JOG_DB_HOST"])
+    handle.write("database=%s\n" % os.environ["JOG_DB_NAME"])
+PY
+chown root:"$FOG_GROUP" "$CNF_FILE"
+chmod 0640 "$CNF_FILE"
+
+# Preserve an existing token so a re-run does not break the Windows client.
+TOKEN=""
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  TOKEN="${JOG_MODEL_API_TOKEN:-}"
+fi
+if [[ -z "$TOKEN" ]]; then
+  TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+fi
+
+cat > "$ENV_FILE" <<EOF
+# /etc/mist/model-api.env — generated by mist-model-api-setup.sh
+# Mode 0640 root:${FOG_GROUP}. Never commit this file.
+
+JOG_MODEL_API_BIND=0.0.0.0
+JOG_MODEL_API_PORT=8089
+JOG_MODEL_API_TOKEN=${TOKEN}
+JOG_MODEL_API_DB_CNF=${CNF_FILE}
+EOF
+chown root:"$FOG_GROUP" "$ENV_FILE"
+chmod 0640 "$ENV_FILE"
+
+# Verify the DB query before enabling the service.
+if ! python3 "$BIN_FILE" --check; then
+  die "model API check failed; inspect the MySQL option file and FOG database"
+fi
+
+systemctl daemon-reload
+systemctl enable --now mist-model-api.service
+
+# The service is on 0.0.0.0:8089; give it a moment to bind.
+for _ in $(seq 1 20); do
+  if curl -fsS --max-time 2 http://127.0.0.1:8089/healthz >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.5
+done
+if ! curl -fsS --max-time 3 http://127.0.0.1:8089/healthz >/dev/null 2>&1; then
+  die "service did not become healthy; run: journalctl -u mist-model-api -n 50"
+fi
+
+log "model API installed and healthy on 0.0.0.0:8089"
+log "token: $TOKEN"
+log "Windows client:"
+log "  .\\Sync-FOGDriverPacks.ps1 -ApiUrl http://192.168.254.1:8089/api/models -ApiToken '$TOKEN'"
+log "Keep the token in C:\\ProgramData\\MIST\\model-api.token on the Windows workstation, not in a script."

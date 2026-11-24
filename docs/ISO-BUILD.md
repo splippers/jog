@@ -1,24 +1,24 @@
-# JOG — ISO-based install (**Ubuntu 26.04 LTS**)
+# MIST — ISO-based install (**Ubuntu 26.04 LTS**)
 
-JOG is pinned to **Ubuntu Server 26.04** (`installer/UBUNTU_RELEASE`). Use the **live-server** amd64 image from [releases.ubuntu.com/26.04](https://releases.ubuntu.com/26.04/) (file name: `ubuntu-26.04-live-server-amd64.iso`).
+MIST is pinned to **Ubuntu Server 26.04** (`installer/UBUNTU_RELEASE`). Use the **live-server** amd64 image from [releases.ubuntu.com/26.04](https://releases.ubuntu.com/26.04/) (file name: `ubuntu-26.04-live-server-amd64.iso`).
 
 | Goal | Use | After install |
 |------|-----|---------------|
-| **VM, one DVD, hands-off lab** | [Hyper-V one ISO](#hyper-v-gen2-one-iso-embedded-nocloud) | Unattended first-boot; optional **`jog-setup-reliable-kiosk.sh`** ([§ After reboot](#after-the-vm-reboots)) |
-| **Full wizard (USB NIC, etc.)** | [Two ISOs + `autoinstall`](#vm-boot-wizard-end-to-end-two-isos-recommended) | **`jog-install-wizard`**, FOG, then **`jog-setup-reliable-kiosk.sh`** ([§ Graphical kiosk](#graphical-session-autologin-fog-management-tab-x11-latitude-class-laptops)) |
+| **VM, one DVD, hands-off lab** | [Hyper-V one ISO](#hyper-v-gen2-one-iso-embedded-nocloud) | Unattended first-boot; optional **`mist-setup-reliable-kiosk.sh`** ([§ After reboot](#after-the-vm-reboots)) |
+| **Full wizard (USB NIC, etc.)** | [Two ISOs + `autoinstall`](#vm-boot-wizard-end-to-end-two-isos-recommended) | **`mist-install-wizard`**, FOG, then **`mist-setup-reliable-kiosk.sh`** ([§ Graphical kiosk](#graphical-session-autologin-fog-management-tab-x11-latitude-class-laptops)) |
 
-JOG ships two layers:
+MIST ships two layers:
 
-1. **Unattended base OS** — autoinstall (`installer/autoinstall/`) installs dnsmasq, git, clones JOG to `/opt/JOG`, and drops helper units.
-2. **Interactive network + FOG** — after reboot, run **`sudo jog-install-wizard`** (dialog TUI). That runs **`jog-provision-stack.sh`** (signed EFI under **`/tftpboot/ubuntu-signed/`**, dnsmasq, native FOG in the background). `/etc/profile.d/jog-remind.sh` reflects **`wizard.done`** and **`fog-native.done`**.
+1. **Unattended base OS** — autoinstall (`installer/autoinstall/`) installs dnsmasq, git, clones MIST to `/opt/MIST`, and drops helper units.
+2. **Interactive network + FOG** — after reboot, run **`sudo mist-install-wizard`** (dialog TUI). That runs **`mist-provision-stack.sh`** (signed EFI under **`/tftpboot/ubuntu-signed/`**, dnsmasq, native FOG in the background). `/etc/profile.d/mist-remind.sh` reflects **`wizard.done`** and **`fog-native.done`**.
 
 Canonical reference (same major): [Autoinstall quick start](https://ubuntu.com/server/docs/install/autoinstall-quickstart) and Subiquity docs: [Providing autoinstall configuration](https://canonical-subiquity.readthedocs-hosted.com/en/latest/tutorial/providing-autoinstall.html).
 
 ## VM boot: wizard end-to-end (**two ISOs**, recommended)
 
-Use this when you want **`sudo jog-install-wizard`** after install (pick **`enx…`** USB NIC, IPs, DHCP, confirm onboard NIC if needed).
+Use this when you want **`sudo mist-install-wizard`** after install (pick **`enx…`** USB NIC, IPs, DHCP, confirm onboard NIC if needed).
 
-**1.** From the **`JOG` repo root on your build machine:
+**1.** From the **`MIST` repo root on your build machine:
 
 ```bash
 sudo apt update
@@ -36,19 +36,19 @@ sudo apt install -y cloud-image-utils xorriso openssl curl
 | Virtual DVD | File |
 |-------------|------|
 | First DVD | **`installer/ubuntu-26.04-live-server-amd64.iso`** |
-| Second DVD | **`installer/jog-autoinstall-seed.iso`** |
+| Second DVD | **`installer/mist-autoinstall-seed.iso`** |
 
 **3.** Boot the installer. At GRUB for the live ISO, append **`autoinstall`** to the **`linux`** line ([Ubuntu quick start](https://ubuntu.com/server/docs/install/autoinstall-quickstart)). Let Subiquity finish and reboot.
 
-**4.** Log in as **`jogadmin`**, run **`sudo jog-install-wizard`**, watch **`journalctl -fu jog-fog-install.service`**. Then follow **Graphical session + autologin** (same page) so Chromium opens **`http://localhost/fog/management/`** after every reboot.
+**4.** Log in as **`jogadmin`**, run **`sudo mist-install-wizard`**, watch **`journalctl -fu mist-fog-install.service`**. Then follow **Graphical session + autologin** (same page) so Chromium opens **`http://localhost/fog/management/`** after every reboot.
 
 ## Hyper-V Gen2 — one ISO (embedded nocloud)
 
 Use this when you attach **exactly one** virtual DVD (no second CIDATA disc) to a **Generation 2** VM.
 
-### Build the ISO (run on any machine with the JOG repo)
+### Build the ISO (run on any machine with the MIST repo)
 
-From the **`JOG` repo root**:
+From the **`MIST` repo root**:
 
 ```bash
 sudo apt update
@@ -58,7 +58,7 @@ sudo apt install -y xorriso openssl curl
 ./installer/build-hyperv-single-iso.sh 'YOUR-JOGADMIN-PASSWORD'
 ```
 
-Outputs **`installer/ubuntu-26.04-live-server-jog-hyperv-amd64.iso`** (override with **`OUT_ISO=...`**). The builder **xorriso-clones** Canonical’s live-server ISO, patches **`/boot/grub/grub.cfg`** and **`/boot/grub/loopback.cfg`** so the installer gets **`autoinstall`** + **`ds=nocloud\;s=/cdrom/nocloud/`**, adds **`/nocloud/`** (rendered **`user-data.hyperv`**), and **`/installer-extra/`** first-boot helpers.
+Outputs **`installer/ubuntu-26.04-live-server-mist-hyperv-amd64.iso`** (override with **`OUT_ISO=...`**). The builder **xorriso-clones** Canonical’s live-server ISO, patches **`/boot/grub/grub.cfg`** and **`/boot/grub/loopback.cfg`** so the installer gets **`autoinstall`** + **`ds=nocloud\;s=/cdrom/nocloud/`**, adds **`/nocloud/`** (rendered **`user-data.hyperv`**), and **`/installer-extra/`** first-boot helpers.
 
 The one-ISO builder accepts optional imaging-network settings as environment variables; omitted settings use the isolated lab defaults below. The builder validates the subnet, DHCP pool, router, and TFTP address before producing the ISO:
 
@@ -79,21 +79,21 @@ JOG_UNATTEND_DHCP_END=192.168.50.200 \
 ./installer/build-hyperv-single-iso.sh 'YOUR-JOGADMIN-PASSWORD'
 ```
 
-`JOG_UNATTEND_IFACE` can pin the image to a specific interface name, but leave it unset for hardware-independent builds. This DHCP network must be isolated from corporate DHCP. The regular two-ISO flow instead presents the same address/pool choices in `jog-install-wizard`; pressing Enter or cancelling an address field keeps its displayed default.
+`JOG_UNATTEND_IFACE` can pin the image to a specific interface name, but leave it unset for hardware-independent builds. This DHCP network must be isolated from corporate DHCP. The regular two-ISO flow instead presents the same address/pool choices in `mist-install-wizard`; pressing Enter or cancelling an address field keeps its displayed default.
 
 Attach that ISO as the VM’s DVD, boot once, let autoinstall finish.
 
 **Hyper-V:** use a **Generation 2** VM with the ISO as the boot DVD (UEFI). If Windows reports **could not find a valid bootloader**, use an ISO built with **`build-hyperv-single-iso.sh`** from current `main`: older builds used **`xorriso -boot_image any keep`**, which broke the hybrid **GPT / El Torito** layout after patching GRUB — rebuild fixes it (`-boot_image any replay`).
 
-**Subiquity exits 100 on `curtin system-install` / retrieving packages:** `exit status 100` from APT usually means **no outbound path to Ubuntu mirrors** (DHCP/NAT/DNS/firewall). The Hyper-V autoinstall omits **`packages:`** during Subiquity — dependencies are **`apt-get install`**’d on **first boot** (`jog-first-boot-unattended.sh`) **before** the imaging-only netplan replaces DHCP. Ensure the VM’s switch provides **internet** until that service finishes (e.g. Hyper-V **Default Switch** NAT), or install from a network where **archive.ubuntu.com** is reachable.
+**Subiquity exits 100 on `curtin system-install` / retrieving packages:** `exit status 100` from APT usually means **no outbound path to Ubuntu mirrors** (DHCP/NAT/DNS/firewall). The Hyper-V autoinstall omits **`packages:`** during Subiquity — dependencies are **`apt-get install`**’d on **first boot** (`mist-first-boot-unattended.sh`) **before** the imaging-only netplan replaces DHCP. Ensure the VM’s switch provides **internet** until that service finishes (e.g. Hyper-V **Default Switch** NAT), or install from a network where **archive.ubuntu.com** is reachable.
 
 **Installer looks frozen at curtin extract** (`acquiring and extracting image from cp:///tmp/.../mount`): Subiquity often prints **one line** and then stays quiet while it copies **several gigabytes** from the virtual DVD — on Hyper-V this can take **30–45+ minutes** with **no progress text**. Before assuming a hang: wait, ensure **≥4 GiB RAM** (prefer **fixed** memory; disable **Dynamic Memory** during install), **≥2 vCPUs**, store the **VHDX on a local SSD**, and keep the **ISO on local disk** (not a slow SMB share). Disable **checkpoints** on the VM for the install if I/O is sluggish.
 
 ### After the VM reboots
 
-A **systemd oneshot** applies the configured imaging address (default **`10.99.0.1/24`**) on the selected interface (by default the first detected Ethernet interface), runs **`jog-provision-stack.sh --blocking-fog`** (EFI → **`/tftpboot/ubuntu-signed`**, dnsmasq, **blocking** **`fog-native-install.sh`**), touches **`/etc/jog/wizard.done`** — no interactive **`jog-install-wizard`** on this path.
+A **systemd oneshot** applies the configured imaging address (default **`10.99.0.1/24`**) on the selected interface (by default the first detected Ethernet interface), runs **`mist-provision-stack.sh --blocking-fog`** (EFI → **`/tftpboot/ubuntu-signed`**, dnsmasq, **blocking** **`fog-native-install.sh`**), touches **`/etc/mist/wizard.done`** — no interactive **`mist-install-wizard`** on this path.
 
-For a **graphical Chromium kiosk on the VM** (same **X11 / LightDM** stack as physical Latitudes), run **`sudo jog-setup-reliable-kiosk.sh jogadmin`** after login (large download). For production laptops you usually want the **two-ISO + wizard** flow so **`enx…`** USB imaging can be chosen explicitly.
+For a **graphical Chromium kiosk on the VM** (same **X11 / LightDM** stack as physical Latitudes), run **`sudo mist-setup-reliable-kiosk.sh jogadmin`** after login (large download). For production laptops you usually want the **two-ISO + wizard** flow so **`enx…`** USB imaging can be chosen explicitly.
 
 **Limits:** suited to a **single-NIC VM** on an isolated/lab switch. Physical laptops with **USB imaging + WiFi** should keep the **two-ISO + wizard** workflow below.
 
@@ -103,7 +103,7 @@ Autoinstall cannot know your **USB NIC name**, **safe IP ranges** beside a corpo
 
 ## 1) Download the 26.04 live-server ISO
 
-From the JOG repo:
+From the MIST repo:
 
 ```bash
 ./installer/fetch-ubuntu-live-server-iso.sh
@@ -129,14 +129,14 @@ sudo apt install -y cloud-image-utils xorriso openssl curl
 ./installer/build-cidata-seed-iso.sh
 ```
 
-Produces **`installer/jog-autoinstall-seed.iso`**. If `cloud-localds` is installed, the seed is built the same way as in the [Ubuntu autoinstall quick start](https://ubuntu.com/server/docs/install/autoinstall-quickstart#using-another-volume-to-provide-the-autoinstall-configuration); otherwise the script falls back to `xorriso`.
+Produces **`installer/mist-autoinstall-seed.iso`**. If `cloud-localds` is installed, the seed is built the same way as in the [Ubuntu autoinstall quick start](https://ubuntu.com/server/docs/install/autoinstall-quickstart#using-another-volume-to-provide-the-autoinstall-configuration); otherwise the script falls back to `xorriso`.
 
 ## Re-run “prep” end-to-end (both ISOs)
 
 If you just want to regenerate both ISO files in one go:
 
 ```bash
-cd /mnt/EDDIE-SANDIEGO/Projects/JOG
+cd /mnt/EDDIE-SANDIEGO/Projects/MIST
 sudo apt update
 sudo apt install -y cloud-image-utils xorriso openssl curl
 ./installer/fetch-ubuntu-live-server-iso.sh
@@ -149,7 +149,7 @@ sudo apt install -y cloud-image-utils xorriso openssl curl
 **Second-volume method** (matches Ubuntu quick start):
 
 - **Drive 1**: `ubuntu-26.04-live-server-amd64.iso` (USB or virtual CD)
-- **Drive 2**: `jog-autoinstall-seed.iso` (second USB or virtual CD)
+- **Drive 2**: `mist-autoinstall-seed.iso` (second USB or virtual CD)
 
 At the bootloader, edit the kernel command line and add **`autoinstall`** so the installer consumes the autoinstall config **without** interactive disk confirmation (see quick start: *“add the autoinstall parameter to the kernel command line”*).
 
@@ -162,23 +162,23 @@ At the bootloader, edit the kernel command line and add **`autoinstall`** so the
 ## After first boot
 
 1. Log in as **`jogadmin`** (password from `./render-user-data.sh`).
-2. **`sudo jog-install-wizard`** — this also runs **`jog-provision-stack.sh`**: signed Ubuntu EFI → **`/tftpboot/ubuntu-signed`**, renders **dnsmasq**, restarts it, and **starts native FOG in the background** (`jog-fog-install.service`). Watch: **`journalctl -fu jog-fog-install.service`**.
+2. **`sudo mist-install-wizard`** — this also runs **`mist-provision-stack.sh`**: signed Ubuntu EFI → **`/tftpboot/ubuntu-signed`**, renders **dnsmasq**, restarts it, and **starts native FOG in the background** (`mist-fog-install.service`). Watch: **`journalctl -fu mist-fog-install.service`**.
 
-If you only edited **`/etc/jog/jog.env`**: **`sudo jog-provision-stack.sh`**
+If you only edited **`/etc/mist/mist.env`**: **`sudo mist-provision-stack.sh`**
 
 ### Graphical session + autologin + FOG management tab (X11 — Latitude-class laptops)
 
-Server ISO installs have **no desktop** by default. For **reliable** Chromium on **Intel iGPU** machines (e.g. **Dell Latitude 3410**), use an **Xorg** desktop session (**`ubuntu-xorg`**) and LightDM — not the default Ubuntu **Wayland** session — so the stack matches **`chromium-jog.sh`** (**`--ozone-platform=x11`**).
+Server ISO installs have **no desktop** by default. For **reliable** Chromium on **Intel iGPU** machines (e.g. **Dell Latitude 3410**), use an **Xorg** desktop session (**`ubuntu-xorg`**) and LightDM — not the default Ubuntu **Wayland** session — so the stack matches **`chromium-mist.sh`** (**`--ozone-platform=x11`**).
 
-After **`jog-install-wizard`** (so **`/etc/jog/jog.env`** exists):
+After **`mist-install-wizard`** (so **`/etc/mist/mist.env`** exists):
 
 ```bash
-sudo jog-setup-reliable-kiosk.sh jogadmin
+sudo mist-setup-reliable-kiosk.sh jogadmin
 sudo reboot
 ```
 
-That installs **`ubuntu-desktop-minimal`**, **`ubuntu-session`** (provides **`ubuntu-xorg`**), **`lightdm`**, **`chromium-browser`**, firmware/Mesa helpers, writes **`lightdm/50-jog-autologin.conf.example`** as **`/etc/lightdm/lightdm.conf.d/50-jog-autologin.conf`** with **`user-session=ubuntu-xorg`** and **`autologin-session=ubuntu-xorg`**, and sets **`graphical.target`**.
+That installs **`ubuntu-desktop-minimal`**, **`ubuntu-session`** (provides **`ubuntu-xorg`**), **`lightdm`**, **`chromium-browser`**, firmware/Mesa helpers, writes **`lightdm/50-mist-autologin.conf.example`** as **`/etc/lightdm/lightdm.conf.d/50-mist-autologin.conf`** with **`user-session=ubuntu-xorg`** and **`autologin-session=ubuntu-xorg`**, and sets **`graphical.target`**.
 
-(`jog-install-wizard` sets **`JOG_FOG_URL=http://localhost/fog/management/`**; **`kiosk/chromium-jog.sh`** uses **`GDK_BACKEND=x11`**, **`--ozone-platform=x11`**, and by default restarts Chromium if it exits.)
+(`mist-install-wizard` sets **`JOG_FOG_URL=http://localhost/fog/management/`**; **`kiosk/chromium-mist.sh`** uses **`GDK_BACKEND=x11`**, **`--ozone-platform=x11`**, and by default restarts Chromium if it exits.)
 
 If **`dpkg`** still configured **gdm**, run **`sudo dpkg-reconfigure lightdm`** and choose **lightdm**.

@@ -1,11 +1,11 @@
-# JOG Provisioner (Windows)
+# MIST Provisioner (Windows)
 
-The Windows-side half of the JOG corporate pipeline. It runs as **SYSTEM** after the image is applied.
+The Windows-side half of the MIST corporate pipeline. It runs as **SYSTEM** after the image is applied.
 In the default `AirGapped` mode it installs drivers, sets the hostname, and leaves the device in
 `AWAITING_CORPORATE`. On the corporate network, `Resume-JOGCorporateEnrollment.ps1` finishes the pipeline:
 domain join → Entra hybrid join → AD groups → BitLocker → escrow verified.
 
-The Linux side installs this directory into `C:\ProgramData\JOG` and writes
+The Linux side installs this directory into `C:\ProgramData\MIST` and writes
 `C:\Windows\Setup\Scripts\SetupComplete.cmd`. The orchestrator registers a `JOGProvisioning` scheduled task
 at startup, so reboots resume the pipeline.
 
@@ -30,14 +30,14 @@ at startup, so reboots resume the pipeline.
 | `Install-JOGDriverPack.ps1` | Manual one-model handoff; installs VMD + detected model pack |
 | `JOGDriverHandoff.bat` | Batch wrapper for the manual first-logon handoff |
 | `SetupComplete.cmd` | OOBE entry point |
-| `jog-provisioning.example.json` | Configuration schema example |
+| `mist-provisioning.example.json` | Configuration schema example |
 
 ---
 
 ## Configuration
 
-The appliance renders the real `jog-provisioning.json` from
-`jog/config/jog-provisioning.env.example`. See `docs/CORPORATE-PROVISIONING.md` for the full schema and the
+The appliance renders the real `mist-provisioning.json` from
+`mist/config/mist-provisioning.env.example`. See `docs/CORPORATE-PROVISIONING.md` for the full schema and the
 security model.
 
 Minimum useful air-gapped config:
@@ -48,10 +48,10 @@ Minimum useful air-gapped config:
   "Domain": "corp.example.com",
   "DomainJoin": {
     "Mode": "Credential",
-    "OUPath": "OU=Workstations,OU=JOG,DC=corp,DC=example,DC=com"
+    "OUPath": "OU=Workstations,OU=MIST,DC=corp,DC=example,DC=com"
   },
   "HybridJoin": { "Enabled": true, "TimeoutMinutes": 30 },
-  "Groups": ["JOG-Workstations"],
+  "Groups": ["MIST-Workstations"],
   "BitLocker": { "Enabled": true, "Mode": "TpmOnly", "Escrow": "AD" },
   "DriverShare": {
     "Unc": "\\\\10.99.0.1\\Drivers",
@@ -74,10 +74,10 @@ air-gapped config; the resume script prompts for it.
 After drivers and hostname:
 
 ```text
-C:\ProgramData\JOG\AWAITING-CORPORATE.txt
-C:\Users\Public\Desktop\JOG - Awaiting Corporate.txt
+C:\ProgramData\MIST\AWAITING-CORPORATE.txt
+C:\Users\Public\Desktop\MIST - Awaiting Corporate.txt
 C:\Users\Public\Desktop\Complete Corporate Enrollment.lnk
-HKLM\SOFTWARE\JOG\State = AWAITING_CORPORATE
+HKLM\SOFTWARE\MIST\State = AWAITING_CORPORATE
 ```
 
 The handoff stage removes the driver-share and domain-join passwords from the config. The device has not
@@ -88,7 +88,7 @@ Enrollment**, or run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File C:\ProgramData\JOG\Resume-JOGCorporateEnrollment.ps1
+  -File C:\ProgramData\MIST\Resume-JOGCorporateEnrollment.ps1
 ```
 
 The script self-elevates, checks DNS/DC reachability, warns about Entra endpoints, prompts for a delegated
@@ -112,9 +112,9 @@ From an elevated PowerShell on the imaged device:
 .\Start-JOGProvisioning.ps1 -Resume
 ```
 
-Logs: `C:\ProgramData\JOG\logs\`.
+Logs: `C:\ProgramData\MIST\logs\`.
 
-State: `C:\ProgramData\JOG\Provisioning.json`.
+State: `C:\ProgramData\MIST\Provisioning.json`.
 
 ---
 
@@ -133,7 +133,7 @@ The fleet path is the catalog sync, run from a Windows 11 workstation with inter
 It queries the read-only FOG model API, resolves Dell/HP catalog packs for the registered models, extracts
 the INF trees, and writes `manifest.json`. The device installs the `VMD` base pack plus its model pack.
 The share is read-only for the `drivers` account used by the device; the upload account is `driveradmin`.
-Do not put either password in this repository. See `jog/docs/DRIVERS.md` for the API, catalog, and manifest
+Do not put either password in this repository. See `mist/docs/DRIVERS.md` for the API, catalog, and manifest
 details.
 
 For a single already-extracted pack, the legacy uploader still works:
@@ -166,7 +166,7 @@ must be a local administrator and the batch must run elevated.
 ## Security notes
 
 - The orchestrator runs as SYSTEM; no autologon and no interactive user is required.
-- `C:\ProgramData\JOG` is ACL'd to SYSTEM/Administrators at first run.
+- `C:\ProgramData\MIST` is ACL'd to SYSTEM/Administrators at first run.
 - The rendered config contains the driver-share password during OOBE; the handoff stage removes it. In
   `Credential` mode the join password is prompted on the corporate LAN and written only for the resume.
 - `CLEANUP` removes the config and secrets and reaches `COMPLETE` only after escrow verification.

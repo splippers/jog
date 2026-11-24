@@ -1,7 +1,1 @@
-[Unit]
-Description=JOG — re-assert the imaging NIC address if it was cleared
-Documentation=file:/usr/local/sbin/jog-imaging-nic-guard.sh
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/jog-imaging-nic-guard.sh
+mist-imaging-nic-guard.service

@@ -1,4 +1,4 @@
-# JOGCommon.ps1 — shared helpers for the JOG Windows provisioner.
+# MISTCommon.ps1 — shared helpers for the MIST Windows provisioner.
 # PowerShell 5.1 compatible. Dot-source from each stage script.
 
 # Write a timestamped message to the console and, when configured, the provisioner log file.

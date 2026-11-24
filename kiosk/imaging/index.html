@@ -3,37 +3,724 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JOG Imaging</title>
+<title>MIST Control Portal</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="bar">
-  <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">JOG</span><span class="sub">Imaging</span></div>
+  <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">MIST</span><span class="sub">Control Portal</span></div>
   <div class="meta">
     <span class="chip" id="mode" hidden></span>
     <span class="conn" id="conn" role="status"><i></i><span>Connecting</span></span>
+    <span class="safe" id="safe" role="status">Safety: checking</span>
     <time id="clock"></time>
   </div>
 </header>
 
-<main>
-  <div class="banner" id="banner" role="alert" hidden></div>
+<div class="shell">
+  <nav class="nav" aria-label="Portal sections">
+    <button class="active" data-panel="overview">Overview</button>
+    <button data-panel="tutorial">System tutorial</button>
+    <button data-panel="tasks">Imaging tasks</button>
+    <button data-panel="hosts">Hosts</button>
+    <button data-panel="images">Images</button>
+    <button data-panel="multicast">Multicast</button>
+    <button data-panel="replicate">Replicate MIST</button>
+    <button data-panel="network">Network wizard</button>
+    <button data-panel="jogometry">MISTMETRY</button>
+    <div class="nav-label">Virtual machines</div>
+    <button data-panel="vm-fleet">VM fleet</button>
+    <button data-panel="vm-build">Build VM</button>
+    <button data-panel="vm-checkpoints">Checkpoints</button>
+    <button data-panel="vm-console">VM console</button>
+    <button data-panel="vm-iso">VM media</button>
+    <button data-panel="vm-resources">VM resources</button>
+    <button data-panel="vm-advanced">Advanced VM tools</button>
+    <button data-panel="gift">Golden image gate</button>
+    <button data-panel="drivers">Drivers</button>
+    <button data-panel="safety">Network safety</button>
+    <button data-panel="system">System &amp; logs</button>
+  </nav>
 
-  <section class="tiles" aria-label="Summary">
-    <div class="tile t-imaging"><span class="label">Imaging</span><span class="num" id="n-imaging">0</span></div>
-    <div class="tile t-queued"><span class="label">Queued</span><span class="num" id="n-queued">0</span></div>
-    <div class="tile t-complete"><span class="label">Complete</span><span class="num" id="n-complete">0</span></div>
-    <div class="tile t-failed"><span class="label">Failed</span><span class="num" id="n-failed">0</span></div>
-  </section>
+  <main>
+    <div class="banner" id="banner" role="alert" hidden></div>
 
-  <section id="grid" class="grid" aria-label="Devices"></section>
+    <section class="panel active" data-panel="overview">
+      <div class="panel-head"><div><h1>Operations overview</h1><p>Live imaging state, service health and network safety at a glance.</p></div><button class="btn" data-refresh="overview">Refresh</button></div>
+      <div class="tiles">
+        <div class="tile t-imaging"><span class="label">Imaging</span><span class="num" id="n-imaging">0</span></div>
+        <div class="tile t-queued"><span class="label">Queued</span><span class="num" id="n-queued">0</span></div>
+        <div class="tile t-complete"><span class="label">Complete</span><span class="num" id="n-complete">0</span></div>
+        <div class="tile t-failed"><span class="label">Failed</span><span class="num" id="n-failed">0</span></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><h2>Active devices</h2><div id="overview-grid" class="device-grid"></div></div>
+        <div class="overview-side">
+          <div class="card"><h2>Service health</h2><div id="services" class="kv"></div><h2>Imaging link</h2><div id="safety-summary" class="kv"></div></div>
+          <div class="card battery-card">
+            <h2>System status</h2>
+            <div class="battery-head"><div class="battery-bar" id="battery-bar"><span id="battery-bar-fill"></span></div><strong class="battery-pct" id="battery-level">--</strong></div>
+            <div class="kv battery-kv">
+              <div class="kv-row"><span>Battery health</span><span id="battery-health">-</span></div>
+              <div class="kv-row"><span>Battery state</span><span id="battery-state">-</span></div>
+              <div class="kv-row"><span>Network</span><span id="sys-network">-</span></div>
+              <div class="kv-row"><span>IP / Gateway</span><span id="sys-ip">-</span></div>
+              <div class="kv-row"><span>Wi-Fi / Signal</span><span id="sys-wifi">-</span></div>
+              <div class="kv-row"><span>DNS</span><span id="sys-dns">-</span></div>
+              <div class="kv-row"><span>Time remaining</span><span id="battery-time">-</span></div>
+              <div class="kv-row"><span>Model</span><span id="battery-model">-</span></div>
+            </div>
+            <div class="battery-note" id="battery-note" hidden>Battery not detected.</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="empty" id="empty" hidden>
-    <div class="empty-mark" aria-hidden="true"></div>
-    <h2>Ready for devices</h2>
-    <p>Connect equipment, boot it from the network, and walk away.</p>
+    <section class="panel" data-panel="tutorial">
+      <div class="panel-head"><div><h1>System tutorial</h1><p>A guided tour of every part of MIST: boot, networks, FOG, JOS, VMs, imaging, safety and operations.</p></div><button class="btn" data-refresh="tutorial">Refresh progress</button></div>
+      <div class="card tutorial-top">
+        <div><div id="tutorial-progress-text" class="muted">0 of 11 chapters complete</div><strong id="tutorial-current">Chapter 1: The big picture</strong></div>
+        <div class="progress"><span id="tutorial-progress-bar"></span></div>
+        <button class="btn" id="tutorial-reset">Reset progress</button>
+      </div>
+      <div class="tutorial-shell">
+        <nav class="tutorial-nav" aria-label="Tutorial chapters">
+          <button class="tutorial-tab active" data-chapter="big-picture">1. Big picture</button>
+          <button class="tutorial-tab" data-chapter="boot">2. Boot and kiosk</button>
+          <button class="tutorial-tab" data-chapter="network">3. Networks and safety</button>
+          <button class="tutorial-tab" data-chapter="portal">4. Control portal</button>
+          <button class="tutorial-tab" data-chapter="fog">5. FOG server</button>
+          <button class="tutorial-tab" data-chapter="pxe">6. PXE and WISP/JOS</button>
+          <button class="tutorial-tab" data-chapter="vm">7. Windows VM workshop</button>
+          <button class="tutorial-tab" data-chapter="imaging">8. Imaging workflow</button>
+          <button class="tutorial-tab" data-chapter="gift">9. Golden image gate</button>
+          <button class="tutorial-tab" data-chapter="ops">10. Operations and scaling</button>
+          <button class="tutorial-tab" data-chapter="troubleshoot">11. Troubleshooting</button>
+        </nav>
+        <div class="tutorial-content">
+          <article class="tutorial-chapter active" data-chapter="big-picture">
+            <div class="tutorial-kicker">Chapter 1</div><h2>The big picture</h2>
+            <p class="lead">MIST is the server side of a portable imaging appliance. It is an Ubuntu laptop running stock FOG, an isolated DHCP/TFTP imaging network, and a Chromium kiosk that points at this portal.</p>
+            <div class="flow"><span class="flow-step">Client PCs</span><span class="flow-arrow">PXE</span><span class="flow-step">MIST laptop</span><span class="flow-arrow">HTTP/NFS</span><span class="flow-step">FOG images</span></div>
+            <div class="two-col">
+              <div class="card"><h3>The four pieces</h3><ul><li><strong>MIST</strong> configures the laptop: Ubuntu, FOG install, DHCP/TFTP, firewall, kiosk, wizard and portal.</li><li><strong>FOG</strong> stays stock. It stores hosts, images, tasks and multicast sessions.</li><li><strong>JOS/WISP runtime</strong> is the client boot/runtime path that talks to FOG with the stock FOS userland.</li><li><strong>GIFT</strong> checks a Windows golden image before capture so stale images are rebuilt, not cloned.</li></ul></div>
+              <div class="card"><h3>Three separate planes</h3><ul><li><strong>Imaging:</strong> USB Ethernet only, isolated DHCP/TFTP/PXE.</li><li><strong>Management:</strong> Wi-Fi or onboard Ethernet reaches FOG web, updates and this portal.</li><li><strong>VM lab:</strong> libvirt NAT gives Windows VMs internet without touching the imaging link.</li></ul></div>
+            </div>
+            <div class="callout">Rule: MIST configures the laptop. JOS/WISP runtime runs on, or builds for, the machine being imaged. FOG remains an unmodified upstream server.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-chapter-complete="big-picture">Mark complete</button><button class="btn" data-next="boot">Next: Boot and kiosk</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="boot">
+            <div class="tutorial-kicker">Chapter 2</div><h2>Boot and kiosk</h2>
+            <p class="lead">The appliance starts from Ubuntu 26.04 live server. Autoinstall lays down the base system; the wizard and installers add the imaging stack; LightDM starts the operator UI without a desktop shell.</p>
+            <div class="flow"><span class="flow-step">Ubuntu autoinstall</span><span class="flow-arrow">then</span><span class="flow-step">mist-install-wizard</span><span class="flow-arrow">then</span><span class="flow-step">FOG + kiosk</span></div>
+            <div class="two-col">
+              <div class="card"><h3>What the installer builds</h3><ul><li><code>/opt/mist</code> (or <code>/opt/mist</code> compat): this repository and its scripts.</li><li><code>/opt/fogproject</code> and <code>/opt/fog</code>: stock FOG source and install tree.</li><li><code>/tftpboot</code>: signed shim, GRUB, kernel, initrd and modules for JOS.</li><li><code>/etc/mist/mist.env</code> (or <code>/etc/mist/mist.env</code> compat): live role configuration.</li></ul></div>
+              <div class="card"><h3>How the kiosk starts</h3><ul><li>LightDM autologs in <code>mist</code>.</li><li>The <code>mist-kiosk</code> session runs <code>/usr/local/bin/chromium-mist.sh</code> (or compat wrapper).</li><li>Chromium opens this portal first, then FOG management and the status page.</li><li><code>MIST_CHROMIUM_RESTART=1</code>  relaunches Chromium if it exits.</li></ul></div>
+            </div>
+            <div class="callout">No GNOME Shell is used. The kiosk depends on X11, LightDM, Chromium and this portal only.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="boot">Mark complete</button><button class="btn" data-next="network">Next: Networks and safety</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="network">
+            <div class="tutorial-kicker">Chapter 3</div><h2>Networks and safety</h2>
+            <p class="lead">MIST has deliberately separate network roles. Mixing them would put a DHCP server on the wrong link, which is the main hazard this appliance is designed to prevent.</p>
+            <div class="two-col">
+              <div class="card"><h3>Interface roles</h3><ul><li><strong>Imaging:</strong> validated USB Ethernet, currently <code>enx34298f79151f</code>, static <code>10.99.0.1/24</code>.</li><li><strong>Backhaul:</strong> Wi-Fi <code>wlp0s20f3</code>, default route for updates and FOG web access.</li><li><strong>VM NAT:</strong> <code>virbr0</code> on <code>192.168.122.0/24</code>, forwarded through Wi-Fi.</li><li><strong>MISTMETRY:</strong> hidden management hotspot/API, never an imaging DHCP server.</li></ul></div>
+              <div class="card"><h3>The safety chain</h3><ol><li>The wizard only allows a USB-attached, non-wireless Ethernet NIC for imaging.</li><li><code>mist-dhcp-guard.py</code> probes for a foreign DHCP server before enabling DHCP.</li><li>dnsmasq binds only to that NIC, with <code>no-dhcp-interface</code> for every other physical NIC.</li><li>The portal reports <strong>armed</strong> only when all of those checks agree.</li></ol></div>
+            </div>
+            <div class="callout">The onboard NIC <code>eno1</code> is disabled. libvirt's <code>virbr0</code> runs its own VM DHCP service; it is not the imaging DHCP server.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="network">Open Network wizard</button><button class="btn" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="network">Mark complete</button><button class="btn" data-next="portal">Next: Control portal</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="portal">
+            <div class="tutorial-kicker">Chapter 4</div><h2>Control portal</h2>
+            <p class="lead">This page is a thin browser UI over a loopback JSON API. It keeps secrets on the server and asks for sudo only when an action changes the system.</p>
+            <div class="flow"><span class="flow-step">Browser panel</span><span class="flow-arrow">JSON</span><span class="flow-step">127.0.0.1:8088</span><span class="flow-arrow">reads</span><span class="flow-step">FOG API / helper</span></div>
+            <div class="two-col">
+              <div class="card"><h3>Read views</h3><ul><li>Overview, hosts, images, VM fleet, ISO lists and logs load without a password prompt.</li><li>FOG tokens are read from <code>/etc/mist/fog-api.env</code> by the service, never sent to the browser.</li><li>VM lists use <code>/api/vm/view</code> through passwordless local sudo.</li></ul></div>
+              <div class="card"><h3>Privileged actions</h3><ul><li>Create, delete, restart, network changes, VM actions and checkpoints open the sudo modal.</li><li>Credentials go only to the loopback API and are used once through <code>mist-portal-network.sh</code>.</li><li>The helper allowlists commands and binds the API to <code>127.0.0.1</code>.</li></ul></div>
+            </div>
+            <div class="callout">If a panel shows an error instead of data, check Overview for service health and FOG API state before changing anything.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-chapter-complete="portal">Mark complete</button><button class="btn" data-next="fog">Next: FOG server</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="fog">
+            <div class="tutorial-kicker">Chapter 5</div><h2>FOG server</h2>
+            <p class="lead">FOG is the inventory, image store and task scheduler. MIST does not fork it; the portal just drives its REST API with a dedicated API-only user.</p>
+            <div class="two-col">
+              <div class="card"><h3>Services</h3><ul><li><code>apache2</code>: FOG web management.</li><li><code>mariadb</code>: host, image and task database.</li><li><code>tftpd-hpa</code>: PXE boot files.</li><li><code>nfs-server</code>: image transport for JOS clients.</li><li><code>FOGMulticastManager</code> and <code>FOGScheduler</code>: multicast and task timing.</li></ul></div>
+              <div class="card"><h3>Objects you manage</h3><ul><li><strong>Hosts:</strong> machines identified by MAC address.</li><li><strong>Images:</strong> stored OS captures, normally zstd format for Linux/JOS workflows.</li><li><strong>Tasks:</strong> deploy, capture and multicast jobs.</li><li><strong>Sessions:</strong> multicast rooms with a port and client count.</li></ul></div>
+            </div>
+            <div class="callout">FOG DHCP stays disabled. DHCP/TFTP are provided by MIST's isolated dnsmasq instance, not by FOG.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="hosts">Open Hosts</button><button class="btn" data-panel-link="images">Open Images</button><button class="btn" data-panel-link="tasks">Open Imaging tasks</button><button class="btn" data-chapter-complete="fog">Mark complete</button><button class="btn" data-next="pxe">Next: PXE and WISP/JOS</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="pxe">
+            <div class="tutorial-kicker">Chapter 6</div><h2>PXE and WISP/JOS</h2>
+            <p class="lead">Imaged machines do not boot a FOG kernel directly. They follow a signed UEFI chain into the JOS/WISP runtime, which then runs the stock FOS userland against FOG.</p>
+            <div class="flow"><span class="flow-step">UEFI PXE</span><span class="flow-arrow">shim</span><span class="flow-step">GRUB</span><span class="flow-arrow">signed kernel</span><span class="flow-step">JOS/WISP initrd</span><span class="flow-arrow">FOS userland</span><span class="flow-step">FOG</span></div>
+            <div class="two-col">
+              <div class="card"><h3>Boot chain</h3><ul><li>Microsoft-signed <code>shimx64.efi</code> is served first.</li><li>GRUB loads a Canonical-signed kernel, the JOS/WISP initrd and signed modules.</li><li>The boot menu offers deploy/capture, registration, system info, debug and memtest.</li><li><code>mist-stage-jos-boot.sh</code> (or compat) stages everything under <code>/tftpboot</code>.</li></ul></div>
+              <div class="card"><h3>Why JOS/WISP runtime exists</h3><ul><li>Stock FOS needs its own kernel and cannot boot with Dell Secure Boot enforcing keys.</li><li>JOS/WISP keeps FOS userland but uses a signed Ubuntu kernel and matching modules.</li><li><code>mist-doctor.sh</code> (or compat) verifies the staged chain and flags kernel drift.</li><li>The client fetches FOG files by HTTP and image data by NFS.</li></ul></div>
+            </div>
+            <div class="callout">Memtest needs Secure Boot off. iPXE is omitted because it is unsigned and cannot be the first stage.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="pxe">Mark complete</button><button class="btn" data-next="vm">Next: Windows VM workshop</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="vm">
+            <div class="tutorial-kicker">Chapter 7</div><h2>Windows VM workshop</h2>
+            <p class="lead">The VM panels build a local Windows 11 golden-image candidate with Secure Boot, TPM 2.0 and internet through libvirt NAT.</p>
+            <div class="flow"><span class="flow-step">Build VM</span><span class="flow-arrow">then</span><span class="flow-step">Fleet</span><span class="flow-arrow">then</span><span class="flow-step">Console</span><span class="flow-arrow">then</span><span class="flow-step">Checkpoints</span></div>
+            <div class="two-col">
+              <div class="card"><h3>Build choices</h3><ul><li>ISOs are discovered from <code>/var/lib/libvirt/isos/</code>; Windows and VirtIO media are separated automatically.</li><li>SATA disk and e1000e NIC are the safe defaults for Windows setup.</li><li>VirtIO ISO stays attached for later driver installation.</li><li>Secure Boot and TPM 2.0 satisfy Windows 11 requirements.</li></ul></div>
+              <div class="card"><h3>Workshop loop</h3><ol><li>Build and start the VM from the Build VM panel.</li><li>Open the VNC display from the Console panel and install Windows.</li><li>Install drivers, join the domain if required and apply updates.</li><li>Create a checkpoint before risky changes or sysprep.</li><li>Run GIFT, then capture the VM as a FOG image.</li></ol></div>
+            </div>
+            <div class="callout">VM internet uses <code>virbr0</code> and the Wi-Fi default route. It never uses the imaging USB NIC.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="vm-build">Open Build VM</button><button class="btn" data-panel-link="vm-fleet">Open VM fleet</button><button class="btn" data-panel-link="vm-checkpoints">Open Checkpoints</button><button class="btn" data-panel-link="vm-console">Open VM console</button><button class="btn" data-chapter-complete="vm">Mark complete</button><button class="btn" data-next="imaging">Next: Imaging workflow</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="imaging">
+            <div class="tutorial-kicker">Chapter 8</div><h2>Imaging workflow</h2>
+            <p class="lead">Once a golden image is ready, FOG captures it and can deploy it back to machines over the isolated imaging link.</p>
+            <div class="two-col">
+              <div class="card"><h3>Prepare</h3><ol><li>Register the host MAC in the Hosts panel.</li><li>Create or select the image record in the Images panel.</li><li>Boot the client from PXE and choose the JOS menu entry.</li><li>Run GIFT before capture if the image is Windows.</li></ol></div>
+              <div class="card"><h3>Run</h3><ul><li><strong>Capture:</strong> reads the client disk and writes a FOG image.</li><li><strong>Deploy:</strong> restores an image onto the selected host.</li><li><strong>Multicast:</strong> sends one image stream to a session of clients.</li><li>Active and recent task state appears in Overview and Imaging tasks.</li></ul></div>
+            </div>
+            <div class="callout">Create image records with the correct format. A blank format can cause FOS restore scripts to do nothing.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="tasks">Open Imaging tasks</button><button class="btn" data-panel-link="multicast">Open Multicast</button><button class="btn" data-chapter-complete="imaging">Mark complete</button><button class="btn" data-next="gift">Next: Golden image gate</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="gift">
+            <div class="tutorial-kicker">Chapter 9</div><h2>Golden image gate</h2>
+            <p class="lead">GIFT is the freshness check that stops an old, patched-by-hand image from becoming the new fleet standard.</p>
+            <div class="two-col">
+              <div class="card"><h3>What GIFT checks</h3><ul><li>Patch support and update freshness.</li><li>Installed software and unexpected changes.</li><li>Domain membership and activation state.</li><li>BitLocker state and escrow readiness.</li></ul></div>
+              <div class="card"><h3>What happens next</h3><ol><li>Boot the candidate Windows image offline from the imaging network.</li><li>Run <code>gift.ps1</code> and save the HTML report.</li><li>Fix every FAIL and review WARN results.</li><li>Capture the image only after the gate passes.</li></ol></div>
+            </div>
+            <div class="callout">The post-capture Windows payload handles drivers, hostname, domain or hybrid join, AD groups and BitLocker escrow. Check the Drivers panel before rollout.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="gift">Open Golden image gate</button><button class="btn" data-panel-link="drivers">Open Drivers</button><button class="btn" data-chapter-complete="gift">Mark complete</button><button class="btn" data-next="ops">Next: Operations and scaling</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="ops">
+            <div class="tutorial-kicker">Chapter 10</div><h2>Operations and scaling</h2>
+            <p class="lead">Day-to-day operation is service health, logs and safe expansion. Never solve capacity by putting two DHCP servers on one broadcast domain.</p>
+            <div class="two-col">
+              <div class="card"><h3>Daily operations</h3><ul><li>Use System and logs to restart services and read journal output.</li><li>Rotate FOG API tokens with <code>sudo /usr/local/sbin/mist-fog-api-init.sh --force</code> (or compat).</li><li>Restage JOS/WISP boot files after a kernel update.</li><li>Re-run the safety check after any NIC or network change.</li></ul></div>
+              <div class="card"><h3>Scaling patterns</h3><ul><li>One MIST per imaging switch or table, with non-overlapping subnets.</li><li>One FOG primary with storage nodes for fan-out.</li><li>Edge MIST nodes syncing <code>/images</code> from a primary.</li><li>Better switch fabric or 10GbE before adding more heads.</li></ul></div>
+            </div>
+            <div class="callout">Only one DHCP server may answer on an imaging segment. Multicast sessions should also stay one per VLAN.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="system">Open System and logs</button><button class="btn" data-panel-link="safety">Open Network safety</button><button class="btn" data-chapter-complete="ops">Mark complete</button><button class="btn" data-next="troubleshoot">Next: Troubleshooting</button></div>
+          </article>
+
+          <article class="tutorial-chapter" data-chapter="troubleshoot">
+            <div class="tutorial-kicker">Chapter 11</div><h2>Troubleshooting</h2>
+            <p class="lead">Most failures map to one of a few layers. Start at the layer that changed last, then move outward.</p>
+            <div class="two-col">
+              <div class="card"><h3>Quick diagnosis</h3><ul><li><strong>Safety review:</strong> imaging NIC missing, wireless, or not USB Ethernet; reattach and re-run the check.</li><li><strong>Portal offline:</strong> check <code>mist-imaging-api</code> and <code>http://127.0.0.1:8088/api/session</code>.</li><li><strong>FOG error:</strong> check service health and API tokens; do not assume the list is empty.</li><li><strong>VM no internet:</strong> check <code>virbr0</code>, libvirt NAT rules and the Wi-Fi default route.</li></ul></div>
+              <div class="card"><h3>Boot and kiosk failures</h3><ul><li>PXE fails: check <code>/tftpboot</code>, dnsmasq bootfile, and staged JOS/WISP files.</li><li>Secure Boot rejects boot: confirm shim, signed kernel and GRUB staging.</li><li>Kiosk fails: check <code>lightdm --show-config</code>, LightDM logs and <code>/tmp/mist-kiosk-mist.log</code> (or compat log).</li><li>NIC disappeared: check kernel USB disconnect messages and physical cabling.</li></ul></div>
+            </div>
+            <div class="callout">Do not bypass safety to keep imaging running. A missing imaging NIC is a stop condition, not a reason to enable DHCP on another interface.</div>
+            <div class="row-buttons"><button class="btn primary" data-panel-link="overview">Open Overview</button><button class="btn" data-panel-link="system">Open System and logs</button><button class="btn" data-chapter-complete="troubleshoot">Mark complete</button></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="tasks">
+      <div class="panel-head"><div><h1>Imaging tasks</h1><p>Queue deploy, capture and multicast jobs, then review and cancel tasks from one place.</p></div><button class="btn" data-refresh="tasks">Refresh</button></div>
+      <div class="card form-grid">
+        <label>Host<select id="task-host"></select></label>
+        <label>Image<select id="task-image"></select></label>
+        <label>Task<select id="task-kind"><option value="deploy">Deploy</option><option value="capture">Capture</option><option value="multicast">Multicast</option></select></label>
+        <label>VM<select id="task-vm"></select></label>
+        <label class="check"><input type="checkbox" id="task-shutdown"> Shut down after task</label>
+        <div class="row-buttons"><button class="btn primary" id="task-submit">Queue task</button><button class="btn" id="task-run" title="Prepare the selected VM, queue the task, and start it now">Run now</button></div>
+      </div>
+      <div class="card"><h2>Active, queued and recent tasks</h2><div id="task-grid" class="device-grid"></div></div>
+    </section>
+
+    <section class="panel" data-panel="hosts">
+      <div class="panel-head"><div><h1>Hosts</h1><p>Search, register and remove FOG host records.</p></div><button class="btn" data-refresh="hosts">Refresh</button></div>
+      <div class="card form-grid">
+        <label>Search<input id="host-search" placeholder="name, MAC or description"></label>
+        <label>Name<input id="host-name" placeholder="LT-SITE01-ABC1234"></label>
+        <label>Primary MAC<input id="host-mac" placeholder="00:1b:44:11:3a:b7"></label>
+        <button class="btn primary" id="host-add">Register host</button>
+      </div>
+      <div class="card"><div id="hosts-table" class="table"></div></div>
+    </section>
+
+    <section class="panel" data-panel="images">
+      <div class="panel-head"><div><h1>Images</h1><p>Inspect captured images and prepare new image records.</p></div><button class="btn" data-refresh="images">Refresh</button></div>
+      <div class="card form-grid">
+        <label>Image name<input id="image-name" placeholder="Win11 Standard"></label>
+        <label>Storage path<input id="image-path" placeholder="Win11-NOV26"></label>
+        <button class="btn primary" id="image-add">Create image</button>
+      </div>
+      <div class="card"><div id="images-table" class="table"></div></div>
+    </section>
+
+    <section class="panel" data-panel="multicast">
+      <div class="panel-head"><div><h1>Multicast command center</h1><p>Launch a fleet stream, watch every client land, then clean up in one click.</p></div><button class="btn" data-refresh="multicast">Refresh</button></div>
+      <div class="card fog-card">
+        <div class="hw-head"><div><h2>One-click launch</h2><p>Prepares the VM for network boot, creates the FOG session, queues clients and starts them.</p></div><span id="mc-health" class="hw-status notice">100-client profile ready</span></div>
+        <div class="form-grid">
+          <label>Host<select id="mc-launch-host"></select></label>
+          <label>Image<select id="mc-launch-image"></select></label>
+          <label>VM<select id="mc-launch-vm"></select></label>
+          <label>Session name<input id="mc-launch-name" placeholder="MIST-LIVE"></label>
+          <label>Port<input id="mc-launch-port" value="63100" type="number"></label>
+          <label>Clients<input id="mc-launch-clients" value="1" type="number"></label>
+          <label class="check"><input type="checkbox" id="mc-launch-start" checked> Start VM after preparing</label>
+          <div class="row-buttons"><button class="btn primary fog-action" id="mc-launch">Launch multicast</button><button class="btn" id="mc-stop">Stop and clean up</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hw-head"><h2>Live wallboard</h2><span id="mc-summary" class="muted">No active sessions</span></div>
+        <div id="mc-wall" class="mc-wall"></div>
+        <pre id="mc-logs" class="mc-logs"></pre>
+      </div>
+      <div class="card form-grid">
+        <label>Image<select id="mc-image"></select></label>
+        <label>Session name<input id="mc-name" placeholder="room-a-Win11"></label>
+        <label>Port<input id="mc-port" value="63100" type="number"></label>
+        <label>Clients<input id="mc-clients" value="1" type="number"></label>
+        <button class="btn primary" id="mc-add">Create session only</button>
+      </div>
+      <div class="card"><div id="mc-table" class="table"></div></div>
+    </section>
+
+    <section class="panel" data-panel="replicate">
+      <div class="panel-head"><div><h1>MIST replicator</h1><p>Turn one clean MIST install into more MIST systems using the same FOG imaging path as every other client.</p></div><button class="btn" data-refresh="replicate">Refresh</button></div>
+      <div class="card fog-card">
+        <div class="hw-head"><div><h2>Create another MIST system</h2><p>Capture the generic source, then deploy it to any blank VM. The target runs an interactive first-boot wizard.</p></div><span id="rep-health" class="hw-status notice">Source image: mist-replicator</span></div>
+        <div class="form-grid">
+          <label>Source VM<select id="rep-source-vm"></select></label>
+          <label>Target VM<select id="rep-target-vm"></select></label>
+          <div class="row-buttons"><button class="btn primary fog-action" id="rep-capture">Capture source image</button><button class="btn fog-action" id="rep-deploy">Deploy to target VM</button></div>
+        </div>
+      </div>
+      <div class="card"><div class="hw-head"><h2>Replicator status</h2><span id="rep-status" class="muted">Loading…</span></div><pre id="rep-detail" class="output"></pre></div>
+      <div class="card">
+        <div class="callout">Flow: build a blank VM, deploy <code>mist-replicator</code> to it, open its console, then answer the first-boot wizard. The wizard installs FOG, JOS/WISP runtime, the kiosk and network settings on the new MIST system.</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="network">
+      <div class="panel-head"><div><h1>Network interface wizard</h1><p>Assign every detected interface a role, then apply the configuration with sudo.</p></div><button class="btn" data-refresh="network">Rescan</button></div>
+      <div class="card"><h2>Detected interfaces</h2><div id="interfaces" class="table"></div></div>
+      <div class="wizard">
+        <div class="card">
+          <h2>1. Backhaul internet access</h2>
+          <p>Management-only path for updates, FOG web access and MISTMETRY reach-off. Never the imaging DHCP network.</p>
+          <div class="form-grid">
+            <label>Interface<select id="backhaul-iface"></select></label>
+            <label>Mode<select id="backhaul-mode"><option value="dhcp">DHCP</option><option value="static">Static</option><option value="wifi">Wi-Fi</option></select></label>
+            <label class="static-only">Address<input id="backhaul-address" placeholder="192.168.1.50"></label>
+            <label class="static-only">Prefix<input id="backhaul-prefix" value="24"></label>
+            <label class="static-only">Gateway<input id="backhaul-gateway" placeholder="192.168.1.1"></label>
+            <label class="static-only">DNS<input id="backhaul-dns" placeholder="1.1.1.1 8.8.8.8"></label>
+            <label class="wifi-only">SSID<input id="backhaul-ssid"></label>
+            <label class="wifi-only">Wi-Fi password<input id="backhaul-wifi-password" type="password"></label>
+            <label class="wifi-only check"><input type="checkbox" id="backhaul-hidden"> Hidden SSID</label>
+          </div>
+          <button class="btn primary" data-apply="backhaul">Apply backhaul</button>
+        </div>
+        <div class="card">
+          <h2>2. Imaging client USB NIC</h2>
+          <p>Only a USB-attached, non-wireless Ethernet adapter can serve DHCP, TFTP and PXE.</p>
+          <div class="form-grid">
+            <label>Interface<select id="imaging-iface"></select></label>
+            <label>Address<input id="imaging-ip" value="10.99.0.1"></label>
+            <label>Prefix<input id="imaging-prefix" value="24"></label>
+            <label>DHCP start<input id="imaging-start" value="10.99.0.100"></label>
+            <label>DHCP end<input id="imaging-end" value="10.99.0.200"></label>
+            <label>Netmask<input id="imaging-netmask" value="255.255.255.0"></label>
+            <label>Router<input id="imaging-router" value="10.99.0.1"></label>
+            <label>Boot file<input id="imaging-bootfile" value="ubuntu-signed/shimx64.efi"></label>
+          </div>
+          <button class="btn primary" data-apply="imaging">Apply imaging NIC</button>
+          <button class="btn" id="network-check">Run safety check</button>
+        </div>
+        <div class="card">
+          <h2>3. MISTMETRY hidden hotspot</h2>
+          <p>USB WLAN becomes a hidden hostapd hotspot for the MISTMETRY Android management app.</p>
+          <div class="form-grid">
+            <label>Interface<select id="hotspot-iface"></select></label>
+            <label>Hidden SSID<input id="hotspot-ssid" value="MISTMETRY"></label>
+            <label>WPA passphrase<input id="hotspot-pass" value=""></label>
+            <label>Channel<input id="hotspot-channel" value="6" type="number"></label>
+            <label>Address<input id="hotspot-ip" value="192.168.254.1"></label>
+            <label>Prefix<input id="hotspot-prefix" value="24"></label>
+            <label>DHCP start<input id="hotspot-start" value="192.168.254.100"></label>
+            <label>DHCP end<input id="hotspot-end" value="192.168.254.200"></label>
+          </div>
+          <div class="row-buttons"><button class="btn" id="hotspot-generate">Generate token</button><button class="btn primary" data-apply="hotspot">Apply hotspot</button><button class="btn" id="hotspot-clients">Show clients</button></div>
+          <pre id="hotspot-token" class="output" hidden></pre>
+        </div>
+      </div>
+      <pre id="network-output" class="output" hidden></pre>
+    </section>
+
+    <section class="panel" data-panel="jogometry">
+      <div class="panel-head"><div><h1>MISTMETRY management</h1><p>Hidden hotspot, token distribution and FOG API bearer codes for mobile monitoring.</p></div><button class="btn" id="jogometry-clients">Refresh clients</button></div>
+      <div class="two-col">
+        <div class="card"><h2>Hotspot state</h2><div id="jogometry-state" class="kv"></div><button class="btn primary" id="jogometry-token">New QR token</button><pre id="jogometry-token-out" class="output" hidden></pre></div>
+        <div class="card"><h2>Associated clients</h2><pre id="jogometry-clients-out" class="output">No data yet.</pre><p class="note">MISTMETRY is management-only. It must never be the imaging DHCP server.</p></div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="vm-fleet">
+      <div class="panel-head"><div><h1>VM fleet</h1><p>Control the local Windows 11 VMs: power, console, checkpoints, media, resources and clones.</p></div><button class="btn" data-refresh="vm-fleet">Refresh</button></div>
+      <div class="tiles vm-tiles">
+        <div class="tile t-imaging"><span class="label">Total VMs</span><span class="num" id="vm-count">0</span></div>
+        <div class="tile t-complete"><span class="label">Running</span><span class="num" id="vm-running">0</span></div>
+        <div class="tile t-queued"><span class="label">Stopped</span><span class="num" id="vm-stopped">0</span></div>
+        <div class="tile t-failed"><span class="label">Paused / other</span><span class="num" id="vm-other">0</span></div>
+      </div>
+      <div class="card"><h2>Available machines</h2><div id="vm-table" class="vm-cards"></div></div>
+      <div class="row-buttons"><button class="btn primary" data-panel-link="vm-build">Build another VM</button></div>
+    </section>
+
+    <section class="panel" data-panel="vm-build">
+      <div class="panel-head"><div><h1>Build a VM</h1><p>Four short steps create a Windows 11 KVM VM with UEFI, Secure Boot and TPM 2.0.</p></div><button class="btn" data-refresh="vm-build">Refresh ISOs</button></div>
+      <div class="wizard vm-wizard">
+        <div class="card"><span class="step">1</span><h2>Name the machine</h2><div class="form-grid"><label>VM name<input id="vm-name" placeholder="win11-golden" value="win11-golden"></label></div></div>
+        <div class="card"><span class="step">2</span><h2>Choose resources</h2><div class="form-grid"><label>RAM MiB<input id="vm-ram" type="number" value="8192"></label><label>vCPUs<input id="vm-vcpus" type="number" value="4"></label><label>Disk GiB<input id="vm-disk" type="number" value="128"></label><label>Disk bus<select id="vm-bus"><option value="sata" selected>sata - safest for setup</option><option value="virtio">virtio - fastest after drivers</option><option value="nvme">nvme</option></select></label></div></div>
+        <div class="card"><span class="step">3</span><h2>Attach media</h2><div class="form-grid"><label>Windows ISO<select id="vm-iso"></select></label><label>VirtIO ISO<select id="vm-virtio"></select></label></div><p class="note">ISOs come from <code>/var/lib/libvirt/isos/</code>. Choose “No install media” to build a blank VM, then attach media later from VM media.</p></div>
+        <div class="card"><span class="step">4</span><h2>Security and network</h2><div class="form-grid"><label>NIC source<select id="vm-network-type"><option value="bridge" selected>Host bridge</option><option value="network">Virtual network</option></select></label><label>Network / bridge<select id="vm-network"><option value="br-fog" selected>br-fog - FOG imaging bridge</option><option value="fog-capture">fog-capture - managed FOG network</option><option value="default">default - NAT lab</option></select></label><label class="check"><input type="checkbox" id="vm-secure" checked> Secure Boot</label><label class="check"><input type="checkbox" id="vm-tpm" checked> TPM 2.0</label><label class="check"><input type="checkbox" id="vm-start"> Start VM after build</label></div><p class="note">Host bridge <code>br-fog</code> puts the VM directly on the imaging fabric so PXE, DHCP and TFTP reach FOG at <code>10.99.0.1</code>. Virtual network <code>fog-capture</code> is the managed equivalent; <code>default</code> is NAT-only.</p></div>
+      </div>
+      <div class="card action-card"><h2>Ready to build</h2><p class="note">The VM is defined immediately. Leave “Start VM after build” unchecked to boot it later from the fleet panel.</p><div class="row-buttons"><button class="btn primary" id="vm-build">Build VM</button><button class="btn" data-panel-link="vm-fleet">Back to fleet</button></div></div>
+      <div class="card"><h2>Clone an existing VM</h2><p class="note">Clones the source disk and persistent configuration with <code>virt-clone --auto-clone</code>.</p><div class="form-grid"><label>Source VM<select id="vm-clone-source"></select></label><label>New VM name<input id="vm-clone-name" placeholder="win11-golden-copy"></label></div><div class="row-buttons"><button class="btn primary" id="vm-clone">Clone VM</button></div></div>
+      <pre id="vm-output" class="output" hidden></pre>
+    </section>
+
+    <section class="panel" data-panel="vm-checkpoints">
+      <div class="panel-head"><div><h1>VM checkpoints</h1><p>Save and restore known-good states before updates, driver changes or sysprep.</p></div><button class="btn" data-refresh="vm-checkpoints">Refresh</button></div>
+      <div class="card form-grid">
+        <label>VM<select id="vm-checkpoint-vm"></select></label>
+        <label>Checkpoint name<input id="vm-checkpoint-name" placeholder="before-updates"></label>
+      </div>
+      <div class="row-buttons"><button class="btn primary" id="vm-checkpoint-create">Create</button><button class="btn" id="vm-checkpoint-list">List</button><button class="btn" id="vm-checkpoint-restore">Restore</button><button class="btn danger" id="vm-checkpoint-delete">Delete</button></div>
+      <div class="card"><h2>Snapshots</h2><div id="vm-checkpoint-table" class="table"></div></div>
+      <pre id="vm-checkpoint-output" class="output">No checkpoints loaded.</pre>
+    </section>
+
+    <section class="panel" data-panel="vm-console">
+      <div class="panel-head"><div><h1>VM console</h1><p>Connect to a VM through the appliance noVNC bridge; no VNC client is needed.</p></div><button class="btn" data-refresh="vm-console">Refresh VMs</button></div>
+      <div class="card form-grid"><label>VM<select id="vm-console-vm"></select></label><button class="btn primary" id="vm-console-load">Connect</button><a class="btn" id="vm-console-link" href="#" target="_blank" rel="noopener" hidden>Open in new tab</a><button class="btn" id="vm-console-reload">Reload frame</button></div>
+      <div class="card console-card"><div class="console-bar"><span id="vm-console-status" class="muted">No VM console loaded.</span></div><iframe id="vm-console-frame" title="VM noVNC console" hidden></iframe></div>
+      <pre id="vm-display-output" class="output">No display loaded.</pre>
+      <div class="card"><h2>How to connect</h2><ol class="checklist"><li>Start the VM from the fleet panel.</li><li>Choose the VM here and select Connect.</li><li>The console is embedded below; use the link to open it in a separate tab.</li></ol></div>
+    </section>
+
+    <section class="panel" data-panel="vm-iso">
+      <div class="panel-head"><div><h1>VM media</h1><p>Attach or eject ISO images in a VM's CD-ROM drive.</p></div><button class="btn" data-refresh="vm-iso">Refresh</button></div>
+      <div class="card form-grid"><label>VM<select id="vm-iso-vm"></select></label><label>ISO image<select id="vm-iso-file"></select></label></div>
+      <div class="row-buttons"><button class="btn primary" id="vm-iso-attach">Attach ISO</button><button class="btn danger" id="vm-iso-detach">Detach ISO</button></div>
+      <div class="card"><h2>Current media</h2><div id="vm-iso-current" class="kv"></div></div>
+    </section>
+
+    <section class="panel" data-panel="vm-resources">
+      <div class="panel-head"><div><h1>VM resources</h1><p>Change persistent memory, vCPU count and disk size. Disk grows only; shrinking is not supported.</p></div><button class="btn" data-refresh="vm-resources">Refresh</button></div>
+      <div class="card form-grid"><label>VM<select id="vm-resources-vm"></select></label><label>RAM MiB<input id="vm-resources-ram" type="number" min="2048" max="65536" step="512"></label><label>vCPUs<input id="vm-resources-vcpus" type="number" min="1" max="32"></label><label>Disk GiB (optional)<input id="vm-resources-disk" type="number" min="20" max="4096" placeholder="leave empty to keep"></label></div>
+      <div class="row-buttons"><button class="btn primary" id="vm-resources-apply">Apply resources</button></div>
+      <div class="card"><h2>Current configuration</h2><div id="vm-resources-current" class="kv"></div></div>
+    </section>
+
+    <section class="panel" data-panel="vm-advanced">
+      <div class="panel-head"><div><h1>Advanced VM tools</h1><p>Full virtual hardware, FOG capture boot, boot order, virtual switches, NICs, virtual disks and USB passthrough for local libvirt domains.</p></div><button class="btn" data-refresh="vm-advanced">Refresh all</button></div>
+      <div class="card form-grid">
+        <label>VM<select id="vm-advanced-vm"></select></label>
+        <div class="advanced-links"><button class="btn" id="vm-advanced-console">Open noVNC console</button></div>
+      </div>
+      <p class="note">Advanced tools call the loopback API with appliance privileges. Browser clients never send sudo credentials for these actions; hardware and NIC changes apply to persistent configuration and take full effect after a VM restart.</p>
+      <div class="card fog-card">
+        <div class="hw-head"><h2>Prepare for FOG capture</h2><span class="pill good">10.99.0.1 DHCP / TFTP</span></div>
+        <p class="note">Creates or validates the bridged <code>fog-capture</code> network with no libvirt DHCP, moves the first NIC onto it, sets network boot first and enables the boot menu. The VM must be shut down for the NIC change.</p>
+        <div class="form-grid">
+          <label>Capture network<input id="vm-fog-network" value="fog-capture"></label>
+          <label class="check"><input type="checkbox" id="vm-fog-start"> Start VM after preparation</label>
+          <button class="btn" id="vm-fog-ensure">Ensure capture network</button>
+          <button class="btn primary fog-action" id="vm-fog-capture">Prepare for FOG capture</button>
+        </div>
+        <p class="hw-status" id="vm-fog-status" hidden></p>
+      </div>
+      <div class="advanced-stack">
+        <details class="advanced-section" open>
+          <summary>Full hardware</summary>
+          <div class="advanced-body">
+            <div class="card">
+              <div class="hw-head"><h2>Current hardware</h2><button class="btn" id="vm-hw-refresh">Refresh hardware</button></div>
+              <div id="vm-hw-summary" class="kv"></div>
+              <p class="hw-status" id="vm-hw-status" hidden></p>
+            </div>
+            <div class="card"><h2>Devices and controllers</h2><div id="vm-hw-devices" class="table"></div></div>
+            <div class="hw-groups">
+              <details class="hw-group">
+                <summary>Machine, firmware and TPM</summary>
+                <div class="form-grid" data-hw-group="machine">
+                  <label>Machine type<select data-hw-key="type"><option value="q35">q35</option><option value="i440fx">i440fx</option></select></label>
+                  <label>Firmware<select data-hw-key="firmware"><option value="uefi">UEFI</option><option value="bios">BIOS</option></select></label>
+                  <label>TPM<select data-hw-key="tpm"><option value="2.0">2.0</option><option value="1.2">1.2</option><option value="none">None</option></select></label>
+                  <label class="check"><input type="checkbox" data-hw-key="secureBoot"> Secure Boot</label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="machine">Apply machine settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>CPU model, topology and features</summary>
+                <div class="form-grid" data-hw-group="cpu">
+                  <label>CPU model<select data-hw-key="model"><option value="host-model">host-model</option><option value="host-passthrough">host-passthrough</option><option value="qemu64">qemu64</option><option value="custom">custom</option></select></label>
+                  <label>Custom model<input data-hw-key="customModel" placeholder="Skylake-Client"></label>
+                  <label>Sockets<input type="number" min="1" max="64" data-hw-int="1" data-hw-key="sockets"></label>
+                  <label>Cores per socket<input type="number" min="1" max="64" data-hw-int="1" data-hw-key="cores"></label>
+                  <label>Threads per core<input type="number" min="1" max="64" data-hw-int="1" data-hw-key="threads"></label>
+                  <label>Features JSON<textarea data-hw-json="1" data-hw-key="features" rows="2" placeholder='[{"name":"vmx","policy":"require"}]'></textarea></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="cpu">Apply CPU settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Memory and balloon</summary>
+                <div class="form-grid" data-hw-group="memory">
+                  <label>Maximum RAM (MiB)<input type="number" min="256" max="262144" data-hw-int="1" data-hw-key="ramMiB"></label>
+                  <label>Current memory (MiB)<input type="number" min="256" max="262144" data-hw-int="1" data-hw-key="currentMiB"></label>
+                  <label class="check"><input type="checkbox" data-hw-key="balloonEnabled"> VirtIO balloon</label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="memory">Apply memory settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Video</summary>
+                <div class="form-grid" data-hw-group="video">
+                  <label>Video model<select data-hw-key="model"><option value="qxl">qxl</option><option value="bochs">bochs</option><option value="virtio">virtio</option><option value="vmware">vmware</option></select></label>
+                  <label>VRAM (MiB)<input type="number" min="1" max="256" data-hw-int="1" data-hw-key="vramMiB"></label>
+                  <label>Heads<input type="number" min="1" max="4" data-hw-int="1" data-hw-key="heads"></label>
+                  <label class="check"><input type="checkbox" data-hw-key="accel3d"> 3D acceleration</label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="video">Apply video settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Audio</summary>
+                <div class="form-grid" data-hw-group="audio">
+                  <label>Audio model<select data-hw-key="model"><option value="none">None</option><option value="ich9">ICH9</option><option value="ac97">AC97</option><option value="ich6">ICH6</option><option value="usb">USB</option><option value="virtio">VirtIO</option><option value="spice">SPICE</option></select></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="audio">Apply audio settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Input devices</summary>
+                <div class="form-grid" data-hw-group="input">
+                  <label class="check"><input type="checkbox" data-hw-key="tablet"> USB tablet</label>
+                  <label class="check"><input type="checkbox" data-hw-key="mouse"> Mouse</label>
+                  <label class="check"><input type="checkbox" data-hw-key="keyboard"> Keyboard</label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="input">Apply input devices</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>USB controller</summary>
+                <div class="form-grid" data-hw-group="usbController">
+                  <label>Controller model<select data-hw-key="model"><option value="xhci">xHCI</option><option value="ehci">EHCI</option><option value="piix3-uhci">piix3-uhci</option><option value="none">None</option></select></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="usbController">Apply USB controller</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Graphics and VNC</summary>
+                <div class="form-grid" data-hw-group="graphics">
+                  <label>Graphics type<select data-hw-key="type"><option value="vnc">VNC</option><option value="spice">SPICE</option><option value="none">None</option></select></label>
+                  <label>Listen address<input data-hw-key="listen" value="127.0.0.1"></label>
+                  <label>Port (0 = auto)<input type="number" min="0" max="65535" data-hw-int="1" data-hw-key="port"></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="graphics">Apply graphics settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>RNG</summary>
+                <div class="form-grid" data-hw-group="rng">
+                  <label class="check"><input type="checkbox" data-hw-key="enabled"> VirtIO RNG enabled</label>
+                  <label>Backend model<select data-hw-key="model"><option value="random">random</option><option value="hwrng">hwrng</option></select></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="rng">Apply RNG settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Watchdog</summary>
+                <div class="form-grid" data-hw-group="watchdog">
+                  <label class="check"><input type="checkbox" data-hw-key="enabled"> Watchdog enabled</label>
+                  <label>Model<select data-hw-key="model"><option value="i6300esb">i6300esb</option><option value="ib700">ib700</option><option value="diag288">diag288</option><option value="itco">itco</option></select></label>
+                  <label>Action<select data-hw-key="action"><option value="reset">reset</option><option value="poweroff">poweroff</option><option value="shutdown">shutdown</option><option value="halt">halt</option><option value="pause">pause</option><option value="dump">dump</option><option value="none">none</option></select></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="watchdog">Apply watchdog settings</button></div>
+              </details>
+              <details class="hw-group">
+                <summary>Boot order</summary>
+                <div class="form-grid" data-hw-group="boot">
+                  <label>Boot order (comma separated: network, cdrom, hd)<input data-hw-list="1" data-hw-key="order" placeholder="network, cdrom, hd"></label>
+                  <label class="check"><input type="checkbox" data-hw-key="menu"> Boot menu</label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" data-hw-apply="boot">Apply boot settings</button></div>
+              </details>
+            </div>
+            <p class="note">Machine, CPU, video, audio, input, USB, RNG and watchdog changes require a shut-down VM. Memory, graphics and boot changes are safe on a running VM and take effect on its next start.</p>
+          </div>
+        </details>
+        <details class="advanced-section" open>
+          <summary>Boot device</summary>
+          <div class="advanced-body">
+            <div class="two-col">
+              <div class="card"><h2>Current boot configuration</h2><div id="vm-boot-current" class="kv"></div></div>
+              <div class="card">
+                <h2>Set boot order</h2>
+                <div class="form-grid">
+                  <label>First device<select id="vm-boot-device"><option value="cdrom">CD-ROM</option><option value="hd">Hard disk</option><option value="network">Network</option></select></label>
+                  <label>Boot menu<select id="vm-boot-menu"><option value="1">Enabled</option><option value="0">Disabled</option></select></label>
+                </div>
+                <div class="row-buttons"><button class="btn primary" id="vm-boot-apply">Apply boot order</button><button class="btn" id="vm-boot-fog" title="Moves the first NIC to fog-capture, sets network-first boot, and optionally starts the VM">Prepare FOG capture (moves NIC)</button></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="advanced-section" open>
+          <summary>Virtual switches</summary>
+          <div class="advanced-body">
+            <div class="card">
+              <h2>Create a virtual switch</h2>
+              <div class="form-grid">
+                <label>Name<input id="vm-net-name" placeholder="lab-nat"></label>
+                <label>Mode<select id="vm-net-mode"><option value="isolated">Isolated</option><option value="nat">NAT</option><option value="bridge">Bridge</option></select></label>
+                <label class="vm-net-address">CIDR<input id="vm-net-cidr" placeholder="192.168.100.0/24"></label>
+                <label class="vm-net-address">DHCP start<input id="vm-net-start" placeholder="192.168.100.10"></label>
+                <label class="vm-net-address">DHCP end<input id="vm-net-end" placeholder="192.168.100.200"></label>
+                <label class="vm-net-bridge">Host bridge<input id="vm-net-bridge" placeholder="br0"></label>
+                <button class="btn primary" id="vm-net-create">Create switch</button>
+              </div>
+            </div>
+            <div class="card"><h2>Existing switches</h2><div id="vm-networks-table" class="table"></div></div>
+          </div>
+        </details>
+
+        <details class="advanced-section">
+          <summary>NICs</summary>
+          <div class="advanced-body">
+            <div class="card"><h2>Current NICs</h2><div id="vm-nics-table" class="table"></div></div>
+            <div class="card">
+              <h2>Add a NIC</h2>
+              <div class="form-grid">
+                <label>Source type<select id="vm-nic-source-type"><option value="network">Virtual network</option><option value="bridge">Host bridge</option></select></label>
+                <label>Source<input id="vm-nic-source" list="vm-network-options" placeholder="default"></label>
+                <label>Model<select id="vm-nic-model"><option value="e1000e">e1000e</option><option value="e1000">e1000</option><option value="virtio">virtio</option><option value="rtl8139">rtl8139</option><option value="vmxnet3">vmxnet3</option></select></label>
+                <label>MAC (optional)<input id="vm-nic-mac" placeholder="52:54:00:11:22:33"></label>
+                <button class="btn primary" id="vm-nic-add">Add NIC</button>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Configure or remove a NIC</h2>
+              <div class="form-grid">
+                <label>NIC<select id="vm-nic-target"></select></label>
+                <label>Action<select id="vm-nic-action"><option value="set-model">Set model</option><option value="set-network">Move to network</option><option value="set-mac">Set MAC</option><option value="remove">Remove NIC</option></select></label>
+                <label class="nic-model-only">New model<select id="vm-nic-new-model"><option value="e1000e">e1000e</option><option value="e1000">e1000</option><option value="virtio">virtio</option><option value="rtl8139">rtl8139</option><option value="vmxnet3">vmxnet3</option></select></label>
+                <label class="nic-network-only">New source type<select id="vm-nic-new-source-type"><option value="network">Virtual network</option><option value="bridge">Host bridge</option></select></label>
+                <label class="nic-network-only">New source<input id="vm-nic-new-source" list="vm-network-options" placeholder="default"></label>
+                <label class="nic-mac-only">New MAC<input id="vm-nic-new-mac" placeholder="52:54:00:11:22:33"></label>
+                <button class="btn primary" id="vm-nic-apply">Apply NIC change</button>
+              </div>
+            </div>
+            <datalist id="vm-network-options"></datalist>
+          </div>
+        </details>
+
+        <details class="advanced-section">
+          <summary>Virtual disks</summary>
+          <div class="advanced-body">
+            <div class="card"><h2>Current disks</h2><div id="vm-disks-table" class="table"></div></div>
+            <div class="card">
+              <h2>Add a disk</h2>
+              <div class="form-grid">
+                <label>Size GiB<input id="vm-disk-size" type="number" min="1" max="4096" value="40"></label>
+                <label>Bus<select id="vm-disk-bus"><option value="virtio">virtio</option><option value="sata">sata</option><option value="ide">ide</option><option value="scsi">scsi</option><option value="nvme">nvme</option></select></label>
+                <label>Format<select id="vm-disk-format"><option value="qcow2">qcow2</option><option value="raw">raw</option></select></label>
+                <button class="btn primary" id="vm-disk-add">Add disk</button>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Resize, boot priority and removal</h2>
+              <div class="form-grid">
+                <label>Disk<select id="vm-disk-target"></select></label>
+                <label>New size GiB<input id="vm-disk-resize-size" type="number" min="1" max="4096" placeholder="larger than current"></label>
+                <button class="btn" id="vm-disk-resize">Resize</button>
+                <button class="btn" id="vm-disk-set-boot">Set boot disk</button>
+                <button class="btn" id="vm-disk-clear-boot">Clear disk boot order</button>
+                <label class="check"><input type="checkbox" id="vm-disk-delete-file"> Delete image file on remove</label>
+                <button class="btn danger" id="vm-disk-remove">Remove disk</button>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Attach or detach an existing image</h2>
+              <div class="form-grid">
+                <label>Image path<input id="vm-disk-attach-path" placeholder="/var/lib/libvirt/images/disk.qcow2"></label>
+                <label>Target<input id="vm-disk-attach-target" placeholder="sdb"></label>
+                <label>Bus<select id="vm-disk-attach-bus"><option value="virtio">virtio</option><option value="sata">sata</option><option value="ide">ide</option><option value="scsi">scsi</option><option value="nvme">nvme</option></select></label>
+                <button class="btn primary" id="vm-disk-attach">Attach image</button>
+                <label>Detach target<select id="vm-disk-detach-target"></select></label>
+                <button class="btn danger" id="vm-disk-detach">Detach image</button>
+              </div>
+              <p class="note">Image paths must be regular files inside <code>/var/lib/libvirt/images</code>.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="advanced-section">
+          <summary>USB passthrough</summary>
+          <div class="advanced-body">
+            <div class="card"><h2>Host USB devices</h2><div id="vm-usb-table" class="table"></div></div>
+            <p class="note">Attach and detach use persistent <code>--config</code> hostdev entries. Power-cycle the VM before expecting a newly attached device inside the guest.</p>
+          </div>
+        </details>
+      </div>
+      <pre id="vm-advanced-output" class="output" hidden></pre>
+    </section>
+
+    <section class="panel" data-panel="gift">
+      <div class="panel-head"><div><h1>Windows golden image gate</h1><p>Run GIFT before FOG capture so stale images are rebuilt instead of cloned.</p></div></div>
+      <div class="card"><h2>Pre-capture checklist</h2><ol class="checklist"><li>Boot the candidate Windows 11 image offline from the imaging network.</li><li>Run GIFT and save the HTML report.</li><li>Resolve all FAIL results and review WARN results.</li><li>Only then queue a capture task from the Imaging tasks panel.</li></ol><pre class="output">powershell -ExecutionPolicy Bypass -File .\gift.ps1 -OutputPath C:\gift.html -AsHtml</pre><p class="note">Repository: <a href="https://github.com/splippers/gift" target="_blank" rel="noreferrer">splippers/gift</a></p></div>
+    </section>
+
+    <section class="panel" data-panel="drivers">
+      <div class="panel-head"><div><h1>Driver share</h1><p>Check the Samba driver repository used by the Windows provisioning payload.</p></div><button class="btn" id="drivers-check">Run check</button></div>
+      <div class="card"><pre id="drivers-output" class="output">No check run yet.</pre></div>
+    </section>
+
+    <section class="panel" data-panel="safety">
+      <div class="panel-head"><div><h1>Network safety</h1><p>Prove the imaging NIC is USB Ethernet and that no foreign DHCP server is present.</p></div><button class="btn primary" id="safety-run">Run safety check</button></div>
+      <div class="two-col"><div class="card"><h2>Current state</h2><div id="safety-detail" class="kv"></div></div><div class="card"><h2>Check result</h2><pre id="safety-output" class="output">No check run yet.</pre></div></div>
+    </section>
+
+    <section class="panel" data-panel="system">
+      <div class="panel-head"><div><h1>System, services and logs</h1><p>Restart imaging services and inspect their logs without leaving the portal.</p></div><button class="btn" data-refresh="system">Refresh</button></div>
+      <div class="card"><h2>Services</h2><div id="system-services" class="table"></div></div>
+      <div class="card"><h2>FOG API</h2><div id="fog-summary" class="kv"></div></div>
+      <div class="card form-grid"><label>Log source<select id="logs-unit"><option>mist-imaging-api</option><option>dnsmasq</option><option>apache2</option><option>mariadb</option><option>tftpd-hpa</option><option>mist-mistmetry-hotspot</option><option>mist-mistmetry-dnsmasq</option></select></label><button class="btn" id="logs-load">Load logs</button></div>
+      <pre id="logs-output" class="output">No logs loaded.</pre>
+      <p class="note">FOG management and host status remain available in the adjacent browser tabs.</p>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="sudo-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sudo-title">
+    <h2 id="sudo-title">Administrator access required</h2>
+    <p id="sudo-reason">This action needs root privileges. Enter a sudo-capable local account.</p>
+    <label>Username<input id="sudo-user" autocomplete="username" value="mistadmin"></label>
+    <label>Password<input id="sudo-pass" type="password" autocomplete="current-password"></label>
+    <p class="error" id="sudo-error" hidden></p>
+    <div class="row-buttons"><button class="btn" id="sudo-cancel">Cancel</button><button class="btn primary" id="sudo-confirm">Run with sudo</button></div>
   </div>
-</main>
+</div>
+
+<div class="modal-backdrop" id="confirm-modal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">Confirm action</h2>
+    <p id="confirm-message"></p>
+    <div class="row-buttons"><button class="btn" id="confirm-cancel">Cancel</button><button class="btn danger" id="confirm-ok">Confirm</button></div>
+  </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>

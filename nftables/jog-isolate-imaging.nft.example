@@ -1,11 +1,11 @@
 # Optional: extra safety beside sensitive corporate LAN.
-# Install: sudo cp jog-isolate-imaging.nft.example /etc/nftables.d/jog-isolate-imaging.nft
-# Adjust interface names and 10.99.0.0/24 to match /etc/jog/jog.env
+# Install: sudo cp mist-isolate-imaging.nft.example /etc/nftables.d/mist-isolate-imaging.nft
+# Adjust interface names and 10.99.0.0/24 to match /etc/mist/mist.env
 #
 # Intent: traffic arriving on USB imaging NIC must not be forwarded to
 # onboard LAN/WiFi. Adjust or remove if you intentionally route PXE clients.
 
-table inet jog_isolate {
+table inet mist_isolate {
   chain forward {
     type filter hook forward priority filter; policy accept;
 
