@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG — bring the imaging NIC up with its static IP, regardless of carrier
+Description=Haar — bring the imaging NIC up with its static IP, regardless of carrier
 After=network-pre.target systemd-udevd.service
 Before=dnsmasq.service
 

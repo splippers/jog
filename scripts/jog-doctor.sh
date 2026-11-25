@@ -1,15 +1,15 @@
 #!/bin/bash
-# Verify the Secure Boot PXE chain staged on this JOG: bootfile -> shim -> grub -> signed kernel -> JOS initrd.
+# Verify the Secure Boot PXE chain staged on this HAAR: bootfile -> shim -> grub -> signed kernel -> JOS initrd.
 # Exit 0 only if every check passes. Safe to run any time; changes nothing.
-TFTP="${JOG_TFTP_ROOT:-/tftpboot}"
+TFTP="${JOG_TFTP_ROOT:-${JOG_TFTP_ROOT:-/tftpboot}}"
 [[ -f /etc/jog/jog.env ]] && source /etc/jog/jog.env
-BOOTFILE="${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}"
+BOOTFILE="${JOG_DHCP_BOOTFILE:-${JOG_DHCP_BOOTFILE:-ubuntu-signed/shimx64.efi}}"
 rc=0
 ok()   { echo "  ok    $*"; }
 bad()  { echo "  FAIL  $*"; rc=1; }
 signed() { sbverify --list "$1" 2>&1 | grep -q 'signature 1'; }
 
-echo "JOG doctor (tftp root: $TFTP)"
+echo "HAAR doctor (tftp root: $TFTP)"
 if [[ ! -f "$TFTP/$BOOTFILE" ]]; then bad "bootfile $BOOTFILE missing"
 elif signed "$TFTP/$BOOTFILE"; then ok "bootfile $BOOTFILE is signed"
 else bad "bootfile $BOOTFILE is UNSIGNED — Secure Boot machines will refuse it (set JOG_DHCP_BOOTFILE=ubuntu-signed/shimx64.efi)"; fi
@@ -31,11 +31,11 @@ fi
 # doctor still passes on a plain imaging appliance.
 
 corp_bad() {
-  if [[ "${JOG_CORPORATE_STRICT:-0}" == "1" ]]; then bad "$*"; else echo "  warn  $*"; fi
+  if [[ "${JOG_CORPORATE_STRICT:-${JOG_CORPORATE_STRICT:-0}}" == "1" ]]; then bad "$*"; else echo "  warn  $*"; fi
 }
 
 echo
-echo "JOG corporate pipeline"
+echo "HAAR corporate pipeline"
 
 if command -v smbclient >/dev/null 2>&1; then ok "smbclient installed"; else corp_bad "smbclient not installed"; fi
 if command -v testparm >/dev/null 2>&1; then
@@ -44,7 +44,7 @@ if command -v testparm >/dev/null 2>&1; then
 else
   corp_bad "testparm not installed (Samba missing)"
 fi
-SHARE_PATH="${JOG_DRIVER_SHARE_PATH:-/srv/jog/drivers}"
+SHARE_PATH="${JOG_DRIVER_SHARE_PATH:-${JOG_DRIVER_SHARE_PATH:-/srv/jog/drivers}}"
 if [[ -d "$SHARE_PATH" ]]; then ok "driver share path $SHARE_PATH exists"
 else corp_bad "driver share path $SHARE_PATH missing"; fi
 if [[ -r /etc/jog/driver-share.env ]]; then ok "driver-share credentials generated"
@@ -60,7 +60,7 @@ else
   corp_bad "model API service not active (run jog-model-api-setup.sh --apply)"
 fi
 
-if [[ "${JOG_AUTOJOIN_ENABLE:-1}" == "1" ]]; then
+if [[ "${JOG_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-1}}" == "1" ]]; then
   AUTOJOIN=/var/www/html/fog/service/jog-autojoin.php
   [[ -f "$AUTOJOIN" ]] || AUTOJOIN=/var/www/fog/service/jog-autojoin.php
   if [[ -f "$AUTOJOIN" ]]; then

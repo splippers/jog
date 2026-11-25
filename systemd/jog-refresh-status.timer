@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG — periodic status refresh for kiosk
+Description=Haar — periodic status refresh for kiosk
 
 [Timer]
 OnBootSec=15

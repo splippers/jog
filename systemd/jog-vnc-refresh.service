@@ -1,0 +1,6 @@
+[Unit]
+Description=Haar noVNC target token refresh
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jog-vnc-refresh.sh

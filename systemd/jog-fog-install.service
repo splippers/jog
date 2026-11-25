@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG — native FOG install (one-shot, after jog.env is ready)
+Description=Haar — native FOG install (one-shot, after jog.env is ready)
 After=network-online.target
 Wants=network-online.target
 

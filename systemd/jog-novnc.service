@@ -1,0 +1,14 @@
+[Unit]
+Description=Haar noVNC bridge for VM consoles
+After=network-online.target libvirtd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/jog-vnc-refresh.sh
+ExecStart=/usr/bin/websockify --web=/usr/share/novnc --cert=/etc/jog/mobile-cert.pem --key=/etc/jog/mobile-key.pem --ssl-only --file-only --token-plugin=TokenFile --token-source=/run/jog-vnc-targets 10.42.0.1:6080
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

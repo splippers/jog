@@ -1,0 +1,12 @@
+[Unit]
+Description=Haar - NAT imaging clients to the backhaul
+After=network-online.target jog-force-imaging-nic-up.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jog-imaging-internet.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

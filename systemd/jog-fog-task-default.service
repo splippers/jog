@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh JOS PXE default from active FOG task
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jog-fog-task-default.sh
