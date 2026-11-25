@@ -1,0 +1,12 @@
+[Unit]
+Description=Haar - keep physical NICs administratively up
+After=systemd-udevd.service network-pre.target
+Before=jog-force-imaging-nic-up.service dnsmasq.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jog-force-nics-up.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

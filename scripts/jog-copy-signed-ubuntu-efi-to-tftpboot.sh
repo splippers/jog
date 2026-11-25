@@ -21,7 +21,7 @@ ensure_pkg() {
 ensure_pkg shim-signed
 ensure_pkg grub-efi-amd64-signed
 
-DEST="${JOG_UBUNTU_EFI_STAGE:-/tftpboot/ubuntu-signed}"
+DEST="${JOG_UBUNTU_EFI_STAGE:-${JOG_UBUNTU_EFI_STAGE:-/tftpboot/ubuntu-signed}}"
 install -d "$DEST/EFI/Boot" "$DEST/EFI/ubuntu"
 
 SHIM=""

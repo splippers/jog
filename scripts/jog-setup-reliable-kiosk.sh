@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 exec 2>>/tmp/jog_error.log
-# Install graphical stack tuned for JOG kiosk: X11-only session (ubuntu-xorg), LightDM,
+# Install graphical stack tuned for HAAR kiosk: X11-only session (ubuntu-xorg), LightDM,
 # Chromium. Intended for Intel iGPU laptops (e.g. Dell Latitude 3410). Run as root.
 
 log() { echo "[jog-setup-reliable-kiosk] $*"; }
@@ -12,7 +12,7 @@ log() { echo "[jog-setup-reliable-kiosk] $*"; }
 }
 
 KIOSK_USER="${1:-jogadmin}"
-ROOT="${JOG_REPO:-/opt/JOG}"
+ROOT="${JOG_REPO:-${JOG_REPO:-/opt/HAAR}}"
 [[ -d "$ROOT" ]] || ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 export DEBIAN_FRONTEND=noninteractive

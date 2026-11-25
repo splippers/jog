@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""JOG model inventory API.
+"""HAAR model inventory API.
 
 Reads the FOG database on the appliance and exposes the distinct hardware
 models that have checked in. The Windows driver-sync script uses this instead
@@ -32,8 +32,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
-ENV_FILE = os.environ.get("JOG_MODEL_API_ENV", "/etc/jog/model-api.env")
-DEFAULT_CNF = os.environ.get("JOG_MODEL_API_DB_CNF", "/etc/jog/model-api.my.cnf")
+ENV_FILE = os.environ.get("JOG_MODEL_API_ENV", os.environ.get("JOG_MODEL_API_ENV", "/etc/jog/model-api.env"))
+DEFAULT_CNF = os.environ.get("JOG_MODEL_API_DB_CNF", os.environ.get("JOG_MODEL_API_DB_CNF", "/etc/jog/model-api.my.cnf"))
 SCHEMA_VERSION = 1
 
 
@@ -202,7 +202,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="JOG FOG model inventory API")
+    parser = argparse.ArgumentParser(description="HAAR FOG model inventory API")
     parser.add_argument("--serve", action="store_true", help="run the HTTP service (default)")
     parser.add_argument("--once", action="store_true", help="print the model JSON once")
     parser.add_argument("--check", action="store_true", help="verify the DB and token")

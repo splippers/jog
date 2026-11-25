@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh JOS PXE default every 10 seconds
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=10s
+AccuracySec=2s
+
+[Install]
+WantedBy=timers.target

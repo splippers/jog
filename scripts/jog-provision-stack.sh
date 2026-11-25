@@ -65,6 +65,6 @@ esac
 # jog-fog-install-once.sh calls jog-post-fog-setup.sh when the install finishes.
 if [[ -f /etc/jog/fog-native.done && -x /usr/local/sbin/jog-post-fog-setup.sh ]]; then
   /usr/local/sbin/jog-post-fog-setup.sh || log "post-FOG corporate setup warned; re-run: sudo jog-post-fog-setup.sh"
-elif [[ "${JOG_DRIVER_SHARE_ENABLE:-0}" == "1" || "${JOG_MODEL_API_ENABLE:-0}" == "1" || "${JOG_AUTOJOIN_ENABLE:-0}" == "1" || "${JOG_MULTICAST_TUNE:-0}" == "1" || "${JOG_PROVISIONING_ENABLE:-0}" == "1" ]]; then
+elif [[ "${JOG_DRIVER_SHARE_ENABLE:-${JOG_DRIVER_SHARE_ENABLE:-0}}" == "1" || "${JOG_MODEL_API_ENABLE:-${JOG_MODEL_API_ENABLE:-0}}" == "1" || "${JOG_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-0}}" == "1" || "${JOG_MULTICAST_TUNE:-${JOG_MULTICAST_TUNE:-0}}" == "1" || "${JOG_PROVISIONING_ENABLE:-${JOG_PROVISIONING_ENABLE:-0}}" == "1" ]]; then
   log "corporate profile queued; it will be applied after FOG install finishes"
 fi

@@ -1,0 +1,17 @@
+[Unit]
+Description=Haaremetry management DHCP/DNS
+Requires=jog-jogemetry-hotspot.service
+After=jog-jogemetry-hotspot.service
+Before=jog-mobile-api.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/jog-jogemetry-prepare.sh
+ExecStart=/usr/sbin/dnsmasq --no-daemon --conf-file=/run/jog-jogemetry-dnsmasq.conf
+Restart=on-failure
+RestartSec=3
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

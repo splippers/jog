@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG — keep the imaging NIC address present (survives netplan apply)
+Description=Haar — keep the imaging NIC address present (survives netplan apply)
 
 [Timer]
 OnBootSec=15s

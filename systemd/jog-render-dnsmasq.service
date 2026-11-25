@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG — render dnsmasq USB-only imaging config
+Description=Haar — render dnsmasq USB-only imaging config
 
 [Service]
 Type=oneshot

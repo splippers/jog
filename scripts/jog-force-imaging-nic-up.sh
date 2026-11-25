@@ -21,7 +21,7 @@ log() { echo "[jog-force-imaging-nic-up] $*"; }
   exit 1
 }
 
-JOG_ENV="${JOG_ENV:-/etc/jog/jog.env}"
+JOG_ENV="${JOG_ENV:-${JOG_ENV:-/etc/jog/jog.env}}"
 [[ -f "$JOG_ENV" ]] || { log "missing $JOG_ENV - nothing to apply"; exit 1; }
 # shellcheck disable=SC1090
 source "$JOG_ENV"

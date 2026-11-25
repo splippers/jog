@@ -15,6 +15,10 @@ exec 2>>/tmp/jog_error.log
 # per-host multicast task association as the "Join Multicast Session" menu.
 # If no session is waiting, JOS falls back to the local disk. No FOG login is
 # needed on the client, and no FOG credential is stored in the initrd.
+#
+# The same endpoint also carries the storage-mode ledger actions used by JOS:
+# capture flags the image with the BIOS mode its drivers were captured under,
+# and deploy checks that flag against the target mode and JOS module support.
 
 log()  { echo "[jog-autojoin-setup] $*"; }
 warn() { echo "[jog-autojoin-setup] WARN: $*" >&2; }
@@ -43,6 +47,12 @@ check() {
   local rc=0
   if [[ -f "$TARGET" ]]; then log "ok    endpoint installed: $TARGET"; else warn "FAIL  endpoint missing: $TARGET (run --apply)"; rc=1; fi
   if [[ -f "$TARGET" ]] && php -l "$TARGET" >/dev/null 2>&1; then log "ok    endpoint parses"; else warn "FAIL  endpoint does not parse"; rc=1; fi
+  if [[ -d /var/lib/jog ]]; then log "ok    storage-mode state directory: /var/lib/jog"; else warn "FAIL  storage-mode state directory missing (run --apply)"; rc=1; fi
+  if [[ -f /var/lib/jog/storage-modes.json ]] && php -r 'exit(is_array(json_decode(file_get_contents($argv[1]), true)) ? 0 : 1);' /var/lib/jog/storage-modes.json >/dev/null 2>&1; then
+    log "ok    storage-mode ledger is valid JSON"
+  else
+    warn "FAIL  storage-mode ledger missing or invalid (run --apply)"; rc=1
+  fi
   if [[ -r "$AUTOJOIN_ENV" ]] && grep -q '^JOG_AUTOJOIN_ALLOW_NET=' "$AUTOJOIN_ENV"; then
     log "ok    $(grep '^JOG_AUTOJOIN_ALLOW_NET=' "$AUTOJOIN_ENV")"
   elif [[ -r "$ENV_FILE" ]] && grep -q '^JOG_AUTOJOIN_ALLOW_NET=' "$ENV_FILE"; then
@@ -70,6 +80,17 @@ check() {
       esac
       rc=1
     fi
+    body="$(curl -sS -w $'\n%{http_code}' --max-time 5 \
+      -X POST --data 'storage_probe=1' \
+      "http://127.0.0.1/fog/service/jog-autojoin.php" 2>/dev/null || true)"
+    code="${body##*$'\n'}"
+    body="${body%$'\n'*}"
+    body="$(printf '%s' "$body" | tr -d '\r\n')"
+    if [[ "$code" == "200" && "$body" == "OK STORAGE ALIVE" ]]; then
+      log "ok    storage-mode endpoint is reachable (probe: $body)"
+    else
+      warn "WARN  storage-mode probe returned HTTP ${code:-none}: ${body:-empty}"; rc=1
+    fi
   else
     warn "WARN  curl not installed; skipping endpoint reachability check"
   fi
@@ -85,6 +106,15 @@ fi
 [[ -f "$SRC" ]] || die "source endpoint not found: $SRC"
 [[ -d "$WEBROOT/service" ]] || die "FOG service directory not found under $WEBROOT (is FOG installed?)"
 php -l "$SRC" >/dev/null 2>&1 || die "source endpoint does not parse: $SRC"
+
+# Haar-side ledger for storage modes captured with images and last seen on
+# hosts. PHP (www-data) writes it; the imaging API reads it.
+install -d -o www-data -g www-data -m 0755 /var/lib/jog
+if [[ ! -f /var/lib/jog/storage-modes.json ]]; then
+  printf '{\n  "images": {},\n  "hosts": {}\n}\n' >/var/lib/jog/storage-modes.json
+  chown www-data:www-data /var/lib/jog/storage-modes.json
+  chmod 0664 /var/lib/jog/storage-modes.json
+fi
 
 install -m 0644 "$SRC" "$TARGET"
 chown www-data:www-data "$TARGET" 2>/dev/null || true

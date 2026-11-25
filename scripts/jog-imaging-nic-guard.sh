@@ -1,5 +1,5 @@
 #!/bin/bash
-# Re-assert the JOG imaging NIC address if anything has cleared it.
+# Re-assert the HAAR imaging NIC address if anything has cleared it.
 #
 # jog-force-imaging-nic-up.service is a boot-time oneshot, so an address it
 # assigned stays gone if something later flushes the interface -- notably
@@ -11,7 +11,7 @@
 # Idempotent and silent: only calls the canonical script when the address is
 # actually missing, so it adds nothing to the journal while healthy.
 set -uo pipefail
-JOG_ENV="${JOG_ENV:-/etc/jog/jog.env}"
+JOG_ENV="${JOG_ENV:-${JOG_ENV:-/etc/jog/jog.env}}"
 [[ -f "$JOG_ENV" ]] || exit 0
 # shellcheck disable=SC1090
 source "$JOG_ENV"

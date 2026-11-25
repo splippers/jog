@@ -2,7 +2,7 @@
 set -euo pipefail
 exec 2>>/tmp/jog_error.log
 
-# Pull /images from primary JOG over SSH (edge / warm-spare nodes).
+# Pull /images from primary HAAR over SSH (edge / warm-spare nodes).
 # Requires: rsync, SSH key or password auth to JOG_PRIMARY_SSH.
 
 CLUSTER_ENV="${CLUSTER_ENV:-/etc/jog/cluster.env}"

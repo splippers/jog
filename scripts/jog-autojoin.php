@@ -14,6 +14,12 @@
  *   - if none is waiting, say NONE so JOS can fall back to the local disk;
  *   - if several are waiting, refuse to guess and say AMBIGUOUS <names>.
  *
+ * It also handles two advisory storage-mode actions from JOS:
+ *   - action=storage_report: record the BIOS mode seen on the client; on a
+ *     capture, flag the image with that mode so a later deploy can compare;
+ *   - action=storage_check: report whether that flag matches the target mode
+ *     and whether JOS has the required module. Warnings never block imaging.
+ *
  * This is deliberately MAC-resolved and unauthenticated, like FOG's own
  * service endpoints. The caller can only act on the host whose MAC it sent,
  * and the endpoint only creates a task for a session that FOG already says is
@@ -176,6 +182,135 @@ function jog_autojoin_read_env($file)
 }
 
 /**
+ * Storage-mode helpers. JOS reports the BIOS storage mode it detected at boot;
+ * on a capture that flag is attached to the image, so a later deploy can warn
+ * when the target BIOS mode no longer matches the drivers baked into the image.
+ * All state lives in one small JSON file -- no FOG schema change is needed.
+ */
+
+function jog_storage_param($name)
+{
+    $value = filter_input(INPUT_POST, $name);
+    if ($value === null || $value === false) {
+        $value = filter_input(INPUT_GET, $name);
+    }
+    return trim((string)$value);
+}
+
+function jog_storage_file()
+{
+    $path = getenv('JOG_STORAGE_MODE_FILE');
+    if ($path === false || trim($path) === '') {
+        $env = jog_autojoin_read_env('/etc/jog/jog.env');
+        $path = isset($env['JOG_STORAGE_MODE_FILE']) ? $env['JOG_STORAGE_MODE_FILE'] : '';
+    }
+    return trim((string)$path) !== '' ? trim((string)$path) : '/var/lib/jog/storage-modes.json';
+}
+
+function jog_storage_load($file)
+{
+    if (!is_readable($file)) {
+        return ['images' => [], 'hosts' => []];
+    }
+    $data = json_decode((string)file_get_contents($file), true);
+    if (!is_array($data)) {
+        return ['images' => [], 'hosts' => []];
+    }
+    foreach (['images', 'hosts'] as $key) {
+        if (!isset($data[$key]) || !is_array($data[$key])) {
+            $data[$key] = [];
+        }
+    }
+    return $data;
+}
+
+function jog_storage_write($file, $data)
+{
+    $tmp = $file . '.tmp';
+    $fp = fopen($tmp, 'c');
+    if (!$fp) {
+        jog_autojoin_out('ERROR cannot write storage state', 500);
+    }
+    flock($fp, LOCK_EX);
+    ftruncate($fp, 0);
+    rewind($fp);
+    fwrite($fp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    fflush($fp);
+    chmod($tmp, 0664);
+    fclose($fp);
+    if (!rename($tmp, $file)) {
+        jog_autojoin_out('ERROR cannot publish storage state', 500);
+    }
+}
+
+function jog_storage_mac($raw)
+{
+    $parts = preg_split('/[^0-9a-fA-F]+/', trim((string)$raw), -1, PREG_SPLIT_NO_EMPTY);
+    if (!count($parts)) {
+        return '';
+    }
+    return strtolower(implode(':', $parts));
+}
+
+function jog_storage_mode($raw)
+{
+    $mode = strtoupper(trim((string)$raw));
+    if (!preg_match('/^[A-Z0-9_-]{1,32}$/', $mode)) {
+        return '';
+    }
+    return $mode;
+}
+
+function jog_storage_image_keys($imgid, $name)
+{
+    $keys = [];
+    $imgid = trim((string)$imgid);
+    $name = trim((string)$name);
+    if ($imgid !== '') {
+        $keys[] = 'id:' . $imgid;
+    }
+    if ($name !== '') {
+        $keys[] = 'name:' . strtolower($name);
+    }
+    return $keys;
+}
+
+function jog_storage_image_mode($data, $imgid, $name)
+{
+    foreach (jog_storage_image_keys($imgid, $name) as $key) {
+        if (isset($data['images'][$key]['mode'])) {
+            return (string)$data['images'][$key]['mode'];
+        }
+    }
+    return 'unknown';
+}
+
+/**
+ * @return array [bool $ok, string $line]
+ */
+function jog_storage_assess($mode, $support, $image_mode)
+{
+    $mode = $mode !== '' ? $mode : 'UNKNOWN';
+    $support = strtolower(trim((string)$support));
+    $image_mode = $image_mode !== '' ? $image_mode : 'unknown';
+    $prefix = 'target=' . $mode . ' image=' . $image_mode . ' jos=' . $support;
+
+    if ($mode === 'UNKNOWN') {
+        return [false, $prefix . ' verdict=unknown detail=storage mode not detected'];
+    }
+    if (strpos($support, 'missing:') === 0) {
+        return [false, $prefix . ' verdict=warn detail=JOS module missing: ' . substr($support, 8)];
+    }
+    if (strtolower($image_mode) === 'unknown') {
+        return [false, $prefix . ' verdict=warn detail=image has no recorded storage mode'];
+    }
+    if (strcasecmp($image_mode, $mode) !== 0) {
+        return [false, $prefix . ' verdict=warn detail=image drivers captured for a different mode'];
+    }
+    return [true, $prefix . ' verdict=ok detail=matching driver mode'];
+}
+
+/**
  * Where may the endpoint be called from? The JOS client is on the imaging
  * subnet; localhost is allowed for the doctor/test. Set
  * JOG_AUTOJOIN_ALLOW_NET (comma-separated CIDRs) to override.
@@ -227,6 +362,88 @@ if (!$allowed) {
 // auto-registration was added, a dummy MAC would create a real host record.
 if (isset($_GET['probe']) || isset($_POST['probe'])) {
     jog_autojoin_out('OK ALIVE');
+}
+if (jog_storage_param('storage_probe') !== '' || jog_storage_param('action') === 'storage_probe') {
+    jog_autojoin_out('OK STORAGE ALIVE');
+}
+
+// Storage-mode report/check. Deliberately before the auto-join handshake:
+// these calls carry no task intent and must never register a host or create
+// a task. They only read/write the small Haar-side mode ledger.
+$storage_action = jog_storage_param('action');
+if ($storage_action === 'storage_report' || $storage_action === 'storage_check') {
+    $storage_file = jog_storage_file();
+    $mac = jog_storage_mac(jog_storage_param('mac'));
+    $mode = jog_storage_mode(jog_storage_param('mode'));
+    $support = jog_storage_param('support');
+    $tasktype = strtolower(jog_storage_param('type'));
+    $imgid = jog_storage_param('imgid');
+    $imagename = jog_storage_param('imagename');
+
+    try {
+        $lock = fopen($storage_file . '.lock', 'c');
+        if (!$lock) {
+            jog_autojoin_out('ERROR cannot lock storage state', 500);
+        }
+        flock($lock, LOCK_EX);
+        $data = jog_storage_load($storage_file);
+
+        if ($mac !== '') {
+            $data['hosts'][$mac] = [
+                'mode' => $mode !== '' ? $mode : 'UNKNOWN',
+                'support' => $support,
+                'imageName' => $imagename,
+                'imageID' => $imgid,
+                'taskType' => $tasktype,
+                'updated' => date('c'),
+            ];
+        }
+
+        if ($storage_action === 'storage_report') {
+            $flagged = '-';
+            if (preg_match('/^(up|upload|capture)$/', $tasktype) && ($imgid !== '' || $imagename !== '')) {
+                $entry = [
+                    'mode' => $mode !== '' ? $mode : 'UNKNOWN',
+                    'support' => $support,
+                    'sourceMAC' => $mac,
+                    'imageName' => $imagename,
+                    'imageID' => $imgid,
+                    'captured' => date('c'),
+                ];
+                foreach (jog_storage_image_keys($imgid, $imagename) as $key) {
+                    $data['images'][$key] = $entry;
+                }
+                $flagged = implode(',', jog_storage_image_keys($imgid, $imagename));
+            }
+            jog_storage_write($storage_file, $data);
+            flock($lock, LOCK_UN);
+            jog_autojoin_out(
+                'OK STORAGE mode=' . ($mode !== '' ? $mode : 'UNKNOWN') .
+                ' support=' . ($support !== '' ? $support : 'unknown') .
+                ' imageFlag=' . $flagged
+            );
+        }
+
+        // Deploy-side check: prefer the mode JOS just detected, fall back to
+        // the last report from this MAC. Image mode comes from the capture flag.
+        $check_mode = $mode;
+        $check_support = $support;
+        if ($check_mode === '' && $mac !== '' && isset($data['hosts'][$mac]['mode'])) {
+            $check_mode = (string)$data['hosts'][$mac]['mode'];
+        }
+        if ($check_support === '' && $mac !== '' && isset($data['hosts'][$mac]['support'])) {
+            $check_support = (string)$data['hosts'][$mac]['support'];
+        }
+        $image_mode = jog_storage_image_mode($data, $imgid, $imagename);
+        list($ok, $line) = jog_storage_assess($check_mode, $check_support, $image_mode);
+        flock($lock, LOCK_UN);
+        jog_autojoin_out(($ok ? 'OK ' : 'WARN ') . $line);
+    } catch (\Exception $e) {
+        if (isset($lock) && is_resource($lock)) {
+            flock($lock, LOCK_UN);
+        }
+        jog_autojoin_out('ERROR ' . $e->getMessage(), 400);
+    }
 }
 
 try {

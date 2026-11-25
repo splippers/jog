@@ -1,5 +1,5 @@
 [Unit]
-Description=JOG FOG model inventory API
+Description=Haar FOG model inventory API
 Documentation=https://github.com/splippers/jog
 After=network-online.target mariadb.service
 Wants=network-online.target

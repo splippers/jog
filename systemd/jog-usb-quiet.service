@@ -1,0 +1,11 @@
+[Unit]
+Description=Disable unused Haar USB hub ports
+After=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jog-usb-quiet.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

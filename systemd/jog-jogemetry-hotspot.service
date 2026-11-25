@@ -1,0 +1,17 @@
+[Unit]
+Description=Haaremetry management access point
+After=network.target
+Before=jog-mobile-api.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/jog-jogemetry-prepare.sh
+ExecStartPost=/usr/local/sbin/jog-jogemetry-internet.sh
+ExecStart=/usr/sbin/hostapd /run/jog-jogemetry-hostapd.conf
+Restart=on-failure
+RestartSec=3
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

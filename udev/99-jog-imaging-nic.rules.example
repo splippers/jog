@@ -1,0 +1,2 @@
+# Bring the imaging NIC up with its static IP as soon as the USB Ethernet adapter appears (it can enumerate after boot-time units have run).
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="enx34298f79151f", TAG+="systemd", ENV{SYSTEMD_WANTS}+="jog-force-imaging-nic-up.service"
