@@ -23,6 +23,21 @@ def sysfs(iface, name):
         return ""
 
 
+def allowed_onboard():
+    """Interface explicitly permitted as a non-USB imaging NIC (JOG_ALLOW_ONBOARD_NIC), or ''.
+    Read from the environment, else from /etc/jog/jog.env. Exactly one named interface, never a pattern."""
+    value = os.environ.get("JOG_ALLOW_ONBOARD_NIC", "")
+    if not value:
+        try:
+            with open(os.environ.get("JOG_ENV", "/etc/jog/jog.env"), encoding="utf-8") as handle:
+                for line in handle:
+                    if line.startswith("JOG_ALLOW_ONBOARD_NIC="):
+                        value = line.split("=", 1)[1].strip().strip('"').strip("'")
+        except OSError:
+            pass
+    return value
+
+
 def valid_usb_ethernet(iface):
     base = f"/sys/class/net/{iface}"
     if not os.path.isdir(base):
@@ -33,6 +48,10 @@ def valid_usb_ethernet(iface):
         return False, f"{iface} is wireless"
     device = os.path.realpath(f"{base}/device")
     if not re.search(r"/usb\d+/", device):
+        # Exception: an onboard (physical, wired) port the operator named explicitly. The DHCP-server
+        # probe in 'check' still runs, so DHCP stays off if another server answers on that link.
+        if iface == allowed_onboard() and os.path.exists(f"{base}/device"):
+            return True, f"{device} (onboard, explicitly allowed)"
         return False, f"{iface} is not USB-attached ({device})"
     return True, device
 
