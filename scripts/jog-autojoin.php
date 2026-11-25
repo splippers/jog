@@ -270,6 +270,21 @@ try {
         jog_autojoin_out('ERROR host is pending registration', 400);
     }
 
+    // A boot that aborts after hostgetkey (no task, bad token, power loss)
+    // leaves hostInfoLock set. The next boot's hostgetkey then refuses with
+    // "Host token is currently in use", hostinfo fails with "Invalid token
+    // passed for host", and the laptop drops to local disk -- zero-touch stays
+    // broken until an admin clears the flag. We are at the very start of a
+    // boot here and the host cannot be imaging yet, so release any stale lock.
+    if ($Host->get('tokenlock')) {
+        $Host->getManager()->update(
+            ['id' => $Host->get('id')],
+            '',
+            ['tokenlock' => false]
+        );
+        $Host->set('tokenlock', false);
+    }
+
     // A task may already be queued by the web UI or by an earlier boot. Do
     // not create a second one; JOS will continue into the normal handshake.
     //

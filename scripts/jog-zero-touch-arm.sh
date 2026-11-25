@@ -3,6 +3,7 @@
 #
 # Usage:
 #   sudo jog-zero-touch-arm [--image NAME] [--clients N] [--name NAME]
+#                             [--maxwait SECONDS]
 #
 # For one directly-connected test laptop use --clients 1. The default of 10
 # makes udp-sender wait for nine more receivers that will never arrive.
@@ -31,13 +32,15 @@ while [[ $# -gt 0 ]]; do
     --image)   IMAGE_NAME="${2:?--image needs a value}"; shift 2 ;;
     --clients) CLIENTS="${2:?--clients needs a value}"; shift 2 ;;
     --name)    SESSION_NAME="${2:?--name needs a value}"; shift 2 ;;
-    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --maxwait) MAXWAIT="${2:?--maxwait needs a value}"; shift 2 ;;
+    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
 
 [[ "$(id -u)" -eq 0 ]] || die "run as root"
 [[ "$CLIENTS" =~ ^[0-9]+$ ]] && (( CLIENTS >= 1 )) || die "--clients must be a positive integer"
+[[ "$MAXWAIT" =~ ^[0-9]+$ ]] && (( MAXWAIT >= 1 )) || die "--maxwait must be a positive integer"
 
 MYSQL=(mysql -N -D fog -e)
 
@@ -86,7 +89,7 @@ pkill -f "udp-sender.*--portbase $SENDER_PORT" 2>/dev/null || true
 # LAST_INSERT_ID is per-connection and each mysql -e above opens a new one,
 # so read the row back by its unique name instead.
 NEW_ID="$("${MYSQL[@]}" "SELECT msID FROM multicastSessions WHERE msName='$SESSION_NAME' ORDER BY msID DESC LIMIT 1;")"
-log "armed session $NEW_ID: '$SESSION_NAME', image '$IMAGE_NAME' (id $IMAGE_ID), $CLIENTS clients, port $SENDER_PORT"
+log "armed session $NEW_ID: '$SESSION_NAME', image '$IMAGE_NAME' (id $IMAGE_ID), $CLIENTS clients, port $SENDER_PORT, max-wait ${MAXWAIT}s"
 
 # The daemon picks queued sessions up on its next tick. Nudge it only if it
 # is not running; otherwise it will notice the row itself within 10 seconds.

@@ -10,7 +10,7 @@ reach the browser. Binds to 127.0.0.1 only. Standard library only, so it runs on
   jog-imaging-api.py            serve live data
   jog-imaging-api.py --demo     serve generated demo devices (no FOG needed; for design and testing)
 """
-import argparse, json, math, os, random, sys, time, urllib.request, urllib.error
+import argparse, json, math, os, random, sys, time, urllib.request, urllib.error, urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ENV_FILE = os.environ.get("JOG_FOG_API_ENV", "/etc/jog/fog-api.env")
@@ -160,6 +160,76 @@ def fetch_demo():
     return {"ok": True, "devices": devices}
 
 
+def storage_mode_payload(query=""):
+    """Read the Haar-side storage-mode ledger written by jog-autojoin.php."""
+    path = os.environ.get("JOG_STORAGE_MODE_FILE", "/var/lib/jog/storage-modes.json")
+    data = {"images": {}, "hosts": {}}
+    try:
+        with open(path, encoding="utf-8") as handle:
+            loaded = json.load(handle)
+        if isinstance(loaded, dict):
+            data.update(loaded)
+    except (OSError, ValueError):
+        pass
+    images = data.get("images") if isinstance(data.get("images"), dict) else {}
+    hosts = data.get("hosts") if isinstance(data.get("hosts"), dict) else {}
+    q = urllib.parse.parse_qs(query)
+
+    def qv(key):
+        values = q.get(key) or []
+        return str(values[0]).strip() if values else ""
+
+    def image_mode(imgid, name):
+        keys = []
+        if imgid:
+            keys.append("id:" + str(imgid))
+        if name:
+            keys.append("name:" + str(name).lower())
+        for key in keys:
+            entry = images.get(key)
+            if isinstance(entry, dict) and entry.get("mode"):
+                return str(entry["mode"]).upper()
+        return "unknown"
+
+    target = qv("mode").upper()
+    imgid = qv("imgid")
+    name = qv("image") or qv("imagename")
+    support_override = qv("support")
+    mac = qv("mac").lower()
+    candidates = [(mac, hosts.get(mac, {}))] if mac else list(hosts.items())
+    if not candidates and (target or imgid or name):
+        candidates.append(("", {}))
+
+    checks = []
+    for host_mac, host in candidates:
+        host = host if isinstance(host, dict) else {}
+        mode = target or str(host.get("mode", "")).upper()
+        support = support_override or str(host.get("support", "")) or "unknown"
+        host_imgid = imgid or str(host.get("imageID", ""))
+        host_name = name or str(host.get("imageName", ""))
+        recorded = image_mode(host_imgid, host_name)
+        ok, detail = True, "matching driver mode"
+        if not mode or mode == "UNKNOWN":
+            ok, detail = False, "storage mode not detected"
+        elif support.startswith("missing:"):
+            ok, detail = False, "JOS module missing: " + support.split(":", 1)[1]
+        elif recorded == "unknown":
+            ok, detail = False, "image has no recorded storage mode"
+        elif recorded != mode:
+            ok, detail = False, "image drivers captured for a different mode"
+        checks.append({
+            "mac": host_mac or None,
+            "mode": mode or "UNKNOWN",
+            "imageMode": recorded,
+            "image": host_name or None,
+            "imageID": host_imgid or None,
+            "josSupport": support,
+            "ok": ok,
+            "detail": detail,
+        })
+    return {"ok": True, "file": path, "images": images, "hosts": hosts, "checks": checks}
+
+
 class Handler(SimpleHTTPRequestHandler):
     demo = False
 
@@ -167,7 +237,16 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=STATIC, **kw)
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/api/devices":
+        path, _, query = self.path.partition("?")
+        if path == "/api/storage-mode":
+            body = json.dumps(storage_mode_payload(query)).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/api/devices":
             res = fetch_demo() if self.demo else fetch_live()
             res["devices"].sort(key=lambda d: ({"imaging": 0, "queued": 1, "failed": 2, "complete": 3}.get(d["phase"], 4), -d["percent"]))
             res["summary"] = summarize(res["devices"])
