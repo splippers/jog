@@ -69,6 +69,7 @@ elif [ "$MODE" = ask ] && [ ${#free_other[@]} -ge 1 ]; then
 fi
 if [ -z "$pick" ]; then
   say "No suitable imaging adapter found (USB adapter not plugged in or not detected). Configuration left unchanged: ${current:-none}."
+  [ "$MODE" = yes ] && exit 0   # unattended (boot): not a unit failure, just nothing to do
   exit 1
 fi
 mac=$(cat "/sys/class/net/$pick/address")
@@ -113,7 +114,7 @@ for id in $bad; do
   printf 'SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="%s", ATTR{idProduct}=="%s", RUN+="/usr/local/sbin/jog-usb-quiet.sh"\n' "${id%:*}" "${id#*:}" >> /etc/udev/rules.d/99-jog-usb-quiet.rules
 done
 udevadm control --reload
-systemctl restart jog-force-imaging-nic-up.service 2>/dev/null || true
-[ -n "$bad" ] && systemctl restart jog-usb-quiet.service 2>/dev/null || true
-systemctl restart jog-render-dnsmasq.service 2>/dev/null || true
+systemctl --no-block restart jog-force-imaging-nic-up.service 2>/dev/null || true
+[ -n "$bad" ] && systemctl --no-block restart jog-usb-quiet.service 2>/dev/null || true
+systemctl --no-block restart jog-render-dnsmasq.service 2>/dev/null || true
 say "Done. Imaging NIC $pick ($mac); uplink ${up:-unchanged}; quiet hubs: ${bad:-none}."
