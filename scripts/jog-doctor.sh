@@ -85,6 +85,23 @@ if [[ "${JOG_AUTOJOIN_ENABLE:-${JOG_AUTOJOIN_ENABLE:-1}}" == "1" ]]; then
   fi
 fi
 
+STORAGE_STATE=/var/lib/jog/storage-modes.json
+if [[ -f "$STORAGE_STATE" ]] && php -r 'exit(is_array(json_decode(file_get_contents($argv[1]), true)) ? 0 : 1);' "$STORAGE_STATE" >/dev/null 2>&1; then
+  ok "storage-mode ledger is valid JSON"
+else
+  corp_bad "storage-mode ledger missing or invalid (run jog-autojoin-setup.sh --apply)"
+fi
+if command -v curl >/dev/null 2>&1; then
+  sm_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 \
+    -X POST --data 'storage_probe=1' \
+    http://127.0.0.1/fog/service/jog-autojoin.php 2>/dev/null || true)"
+  case "$sm_code" in
+    200) ok "storage-mode endpoint reachable (HTTP $sm_code)" ;;
+    404) corp_bad "storage-mode endpoint returns 404 (reinstall jog-autojoin.php)" ;;
+    *) echo "  warn  storage-mode endpoint returned HTTP ${sm_code:-none}" ;;
+  esac
+fi
+
 PAYLOAD=/images/postdownloadscripts/jog-provisioner
 if [[ -f "$PAYLOAD/Start-JOGProvisioning.ps1" ]]; then ok "provisioner payload installed"
 else corp_bad "provisioner payload missing ($PAYLOAD)"; fi

@@ -1453,6 +1453,96 @@ def multicast_stop(body, username, password, local=False):
     return {"ok": True, "sessions": stopped_sessions, "tasks": stopped_tasks, "vms": stopped_vms}
 
 
+def storage_mode_payload(query=None):
+    """Read the Haar-side storage-mode ledger from the FOG service endpoint.
+
+    JOS writes it at boot: captures flag the image with the BIOS mode its
+    drivers were captured under, deploys check that flag against the target
+    mode and the JOS modules staged in the running initrd. The endpoint is
+    advisory, so this payload is safe to expose read-only to the kiosk.
+    """
+    path = os.environ.get("JOG_STORAGE_MODE_FILE", "/var/lib/jog/storage-modes.json")
+    raw = {"images": {}, "hosts": {}}
+    try:
+        with open(path, encoding="utf-8") as handle:
+            loaded = json.load(handle)
+        if isinstance(loaded, dict):
+            raw.update(loaded)
+    except (OSError, ValueError):
+        pass
+
+    images = raw.get("images") if isinstance(raw.get("images"), dict) else {}
+    hosts = raw.get("hosts") if isinstance(raw.get("hosts"), dict) else {}
+    q = query or {}
+
+    def qv(key):
+        values = q.get(key) or []
+        return str(values[0]).strip() if values else ""
+
+    def image_mode(imgid, name):
+        keys = []
+        if imgid:
+            keys.append("id:" + str(imgid))
+        if name:
+            keys.append("name:" + str(name).lower())
+        for key in keys:
+            entry = images.get(key)
+            if isinstance(entry, dict) and entry.get("mode"):
+                return str(entry["mode"]).upper()
+        return "unknown"
+
+    target = qv("mode").upper()
+    imgid = qv("imgid")
+    name = qv("image") or qv("imagename")
+    support_override = qv("support")
+    wanted_mac = qv("mac").lower()
+
+    candidates = []
+    if wanted_mac:
+        candidates.append((wanted_mac, hosts.get(wanted_mac, {})))
+    else:
+        candidates.extend(hosts.items())
+    if not candidates and (target or imgid or name):
+        candidates.append(("", {}))
+
+    checks = []
+    for mac, host in candidates:
+        host = host if isinstance(host, dict) else {}
+        mode = target or str(host.get("mode", "")).upper()
+        support = support_override or str(host.get("support", "")) or "unknown"
+        host_image_id = imgid or str(host.get("imageID", ""))
+        host_image_name = name or str(host.get("imageName", ""))
+        detected_image = image_mode(host_image_id, host_image_name)
+        ok = True
+        detail = "matching driver mode"
+        if not mode or mode == "UNKNOWN":
+            ok, detail = False, "storage mode not detected"
+        elif support.startswith("missing:"):
+            ok, detail = False, "JOS module missing: " + support.split(":", 1)[1]
+        elif detected_image == "unknown":
+            ok, detail = False, "image has no recorded storage mode"
+        elif detected_image != mode:
+            ok, detail = False, "image drivers captured for a different mode"
+        checks.append({
+            "mac": mac or None,
+            "mode": mode or "UNKNOWN",
+            "imageMode": detected_image,
+            "image": host_image_name or None,
+            "imageID": host_image_id or None,
+            "josSupport": support,
+            "ok": ok,
+            "detail": detail,
+        })
+
+    return {
+        "ok": True,
+        "file": path,
+        "images": images,
+        "hosts": hosts,
+        "checks": checks,
+    }
+
+
 class Handler(SimpleHTTPRequestHandler):
     demo = False
 
@@ -1539,6 +1629,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.guarded(overview)
         if path == "/api/network/interfaces":
             return self.guarded(lambda: {"ok": True, "interfaces": list_interfaces()})
+        if path == "/api/storage-mode":
+            return self.guarded(lambda: storage_mode_payload(q))
         if path == "/api/vm/view":
             return self.guarded(local_view)
         if path == "/api/vm/local/view":

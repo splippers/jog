@@ -16,6 +16,8 @@ What it does:
 
 Safety: the guard still sends a DHCP probe on the port before serving. If another DHCP server answers (for example the
 port is plugged into the office LAN) DHCP stays **disabled**. Cable the onboard port to an isolated switch or straight to
-the machine being imaged, and give the PC its internet through the other adapter.
+the machine being imaged, and give the PC its internet through the other adapter. `jog-imaging-internet.service`
+is the NAT rule that does this: clients use Haar (`10.99.0.1`) as router/DNS and are masqueraded out the default-route
+uplink; enable it with `sudo systemctl enable --now jog-imaging-internet.service`.
 
 Undo: `sudo jog-hardware-wizard` (without `--onboard`) removes the opt-in and the NetworkManager file.

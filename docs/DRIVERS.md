@@ -262,7 +262,9 @@ smbclient //127.0.0.1/Drivers -U 'drivers%<password>' -c 'get VMD\\iaStorVD.inf 
 The fleet standard is RAID On. The `iaStorVD` INF has no `CriticalDeviceDatabase` entry by design; it
 binds as a boot-start SCSI miniport (`StartType = SERVICE_BOOT_START`). Keep the storage driver in
 `VMD\`, and keep the AHCI image (`WIN11-SEP26`) as rollback until the RAID image (`WIN11-NOV26-18`) is
-deploy-tested on a factory-RAID machine.
+deploy-tested on a factory-RAID machine. JOS now detects the client's BIOS mode at boot and flags each
+captured image with the mode it was captured under; see [STORAGE-MODES.md](STORAGE-MODES.md) for the
+warning flow and the `/api/storage-mode` payload.
 
 ## Permissions
 
