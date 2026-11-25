@@ -1,0 +1,31 @@
+[Unit]
+Description=JOG mobile companion API (authenticated HTTPS)
+Documentation=https://github.com/splippers/jog
+After=network-online.target jog-imaging-api.service jog-model-api.service apache2.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+# Secrets stay root-owned; systemd gives this service private copies.
+LoadCredential=mobile-api.env:/etc/jog/mobile-api.env
+LoadCredential=fog-api.env:/etc/jog/fog-api.env
+LoadCredential=model-api.env:/etc/jog/model-api.env
+LoadCredential=tls-key:/etc/jog/mobile-key.pem
+Environment=JOG_MOBILE_ENV=%d/mobile-api.env
+Environment=JOG_FOG_API_ENV=%d/fog-api.env
+Environment=JOG_MODEL_API_ENV=%d/model-api.env
+Environment=JOG_MOBILE_TLS_KEY=%d/tls-key
+ExecStart=/usr/local/bin/jog-mobile-api.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
