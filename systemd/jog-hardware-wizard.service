@@ -1,0 +1,14 @@
+[Unit]
+Description=Haar hardware wizard (re-detect imaging NIC and faulty USB hubs if the configured adapter is missing)
+After=systemd-udev-settle.service
+Before=jog-force-imaging-nic-up.service jog-render-dnsmasq.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/jog/jog.env
+# Only runs when the configured adapter is absent, e.g. after the system was installed on a different laptop.
+ExecCondition=/bin/sh -c '! ip link show "$JOG_USB_IFACE" >/dev/null 2>&1'
+ExecStart=/usr/local/sbin/jog-hardware-wizard --yes
+
+[Install]
+WantedBy=multi-user.target
