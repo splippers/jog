@@ -48,14 +48,28 @@ done
 [ ${#cands[@]} -gt 0 ] || { say "No wired adapter found. Plug in the USB Ethernet adapter and run again."; exit 1; }
 
 current=$(getenvkey JOG_USB_IFACE)
+# An onboard port that is in use for the normal network (default route or a non-imaging address) is never a candidate.
+in_use() { ip -4 route show default 2>/dev/null | grep -q " dev $1 " || ip -4 addr show dev "$1" 2>/dev/null | grep -q "inet "; }
+free_other=(); for i in "${other[@]:-}"; do [ -n "$i" ] && ! in_use "$i" && free_other+=("$i"); done
+# Unattended runs (boot): a USB adapter can enumerate late, so give it a moment before concluding it is absent.
+if [ "$MODE" = yes ] && [ ${#usb[@]} -eq 0 ]; then
+  for _ in $(seq 1 30); do
+    for n in /sys/class/net/*; do [ -e "$n/device" ] && [ ! -d "$n/wireless" ] && readlink -f "$n/device" | grep -q '/usb' && usb+=("$(basename "$n")"); done
+    [ ${#usb[@]} -gt 0 ] && break; sleep 1
+  done
+fi
 pick=""
 if [ ${#usb[@]} -eq 1 ]; then pick=${usb[0]}
 elif [ ${#usb[@]} -gt 1 ]; then
   say "More than one USB adapter; the imaging NIC must be the one cabled to the clients."
   if [ "$MODE" = ask ]; then select pick in "${usb[@]}"; do [ -n "$pick" ] && break; done; else pick=${usb[0]}; fi
-elif [ ${#other[@]} -ge 1 ]; then
-  say "No USB adapter present; an onboard port can be used (the system keeps it up without carrier)."
-  if [ "$MODE" = ask ] && [ ${#other[@]} -gt 1 ]; then select pick in "${other[@]}"; do [ -n "$pick" ] && break; done; else pick=${other[0]}; fi
+elif [ "$MODE" = ask ] && [ ${#free_other[@]} -ge 1 ]; then
+  say "No USB adapter present. A spare onboard port can be used (the system keeps it up without carrier)."
+  select pick in "${free_other[@]}" "none"; do [ -n "$pick" ] && break; done; [ "$pick" = none ] && pick=""
+fi
+if [ -z "$pick" ]; then
+  say "No suitable imaging adapter found (USB adapter not plugged in or not detected). Configuration left unchanged: ${current:-none}."
+  exit 1
 fi
 mac=$(cat "/sys/class/net/$pick/address")
 say "Recommended imaging NIC: $pick ($mac)   configured now: ${current:-none}"
